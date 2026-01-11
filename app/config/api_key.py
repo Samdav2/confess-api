@@ -7,7 +7,7 @@ load_dotenv()
 
 API_KEY_NAME = "X-API-KEY"
 
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 
 VALID_API_KEYS = os.getenv("API_KEY")
 

@@ -12,8 +12,6 @@ packages = [
     "passlib[bcrypt]",
     "bcrypt==3.2.2",
     "python-jose[cryptography]",
-    "selenium",
-    "webdriver-manager",
     "requests",
     "mailjet-rest",
     "jinja2",
