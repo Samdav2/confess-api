@@ -1,0 +1,14 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<p>A new reply has been posted to your support ticket <strong>#{{ ticket_id }}</strong>.</p>
+
+<div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 15px; margin: 20px 0;">
+    <p style="margin: 0; font-weight: bold; color: #0369a1;">Support Team Reply:</p>
+    <p style="margin-top: 10px; color: #334155;">{{ reply_message }}</p>
+</div>
+
+<p>You can reply directly to this email to continue the conversation.</p>
+{% endblock %}

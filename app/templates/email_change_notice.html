@@ -1,0 +1,20 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ user_name }}</strong>,</p>
+
+<p>This is a security notice to inform you that the email address associated with your Confess account has been changed.
+</p>
+
+<p><strong>Old Email:</strong> {{ old_email }}<br>
+    <strong>New Email:</strong> {{ new_email }}
+</p>
+
+<div class="confession-card">
+    "Security Alert: Email Address Updated"
+</div>
+
+<p>If you made this change, you can safely ignore this email.</p>
+
+<p><strong>If you did not authorize this change, please contact our support team immediately.</strong></p>
+{% endblock %}

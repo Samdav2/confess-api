@@ -1,0 +1,18 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<p>We received your reply to ticket <strong>#{{ ticket_id }}</strong>.</p>
+
+<div style="background-color: #f8fafc; border-left: 4px solid #94a3b8; padding: 15px; margin: 20px 0;">
+    <p style="margin: 0; font-weight: bold; color: #475569;">Your Reply:</p>
+    <p style="margin-top: 10px; color: #334155;">{{ reply_message }}</p>
+</div>
+
+<div class="confession-card">
+    "Thanks for the update. We're looking into it. 🙏"
+</div>
+
+<p>Our team will review your response and get back to you shortly.</p>
+{% endblock %}

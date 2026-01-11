@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>{{ subject }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Settings */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            /* Light Gray background */
+            color: #000000;
+            /* Black text */
+        }
+
+        /* Layout */
+        .wrapper {
+            width: 100%;
+            background-color: #f4f4f4;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header */
+        .header {
+            background-color: #000000;
+            /* Black Header */
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        /* Banner Image */
+        .banner {
+            width: 100%;
+            display: block;
+        }
+
+        /* Content Area */
+        .content {
+            padding: 32px;
+            line-height: 1.6;
+            color: #000000;
+        }
+
+        .content p {
+            margin: 0 0 18px;
+            font-size: 16px;
+        }
+
+        /* Special "Confession Card" */
+        .confession-card {
+            background-color: #fff0f0;
+            /* Very light red */
+            border-left: 4px solid #dc2626;
+            /* Red accent */
+            padding: 20px;
+            border-radius: 0 4px 4px 0;
+            margin: 24px 0;
+            font-style: italic;
+            color: #000000;
+            font-size: 17px;
+        }
+
+        /* Button */
+        .cta-button {
+            display: inline-block;
+            background-color: #dc2626;
+            /* Red Button */
+            color: #ffffff !important;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #000000;
+            /* Black Footer */
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer img {
+            max-width: 100px;
+            margin-bottom: 15px;
+        }
+
+        .footer a {
+            color: #dc2626;
+            /* Red links */
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+
+            body,
+            .wrapper {
+                background-color: #1a1a1a !important;
+                color: #ffffff !important;
+            }
+
+            .container {
+                background-color: #000000 !important;
+                color: #ffffff !important;
+            }
+
+            .content {
+                color: #ffffff !important;
+            }
+
+            .content p {
+                color: #ffffff !important;
+            }
+
+            .confession-card {
+                background-color: #2d1a1a !important;
+                border-left: 4px solid #dc2626 !important;
+                color: #ffffff !important;
+            }
+
+            .footer {
+                background-color: #000000 !important;
+                color: #cccccc !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <!-- Header with Logo -->
+            <div class="header">
+                <img src="cid:logo" alt="Confess Logo">
+            </div>
+
+            <!-- Banner Image -->
+            <img src="cid:image1" alt="Confess Banner" class="banner">
+
+            <div class="content">
+                {% block content %}
+                {{ content | safe }}
+                {% endblock %}
+
+                {% if cta_link and cta_text %}
+                <div style="text-align: center; margin-top: 30px; margin-bottom: 10px;">
+                    <a href="{{ cta_link }}" class="cta-button">{{ cta_text }}</a>
+                </div>
+                {% endif %}
+
+                <p style="margin-top: 32px; font-size: 14px; color: #666666;">
+                    Sending you warm vibes,<br>
+                    <strong>The Confess Team</strong>
+                </p>
+            </div>
+
+            <div class="footer">
+                <img src="cid:image2" alt="Confess Footer Logo">
+                <p>&copy; {{ current_year }} Confess. All rights reserved.</p>
+                <p>
+                    <a href="{{ site_url }}/privacy">Privacy Policy</a> •
+                    <a href="{{ site_url }}/unsubscribe">Unsubscribe</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

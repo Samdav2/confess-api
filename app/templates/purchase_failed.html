@@ -1,0 +1,20 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ user_name }}</strong>,</p>
+
+<p>We regret to inform you that your recent purchase attempt failed.</p>
+
+<div style="background-color: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin: 20px 0;">
+    <p style="margin: 5px 0;"><strong>Service:</strong> {{ service_name }}</p>
+    <p style="margin: 5px 0;"><strong>Amount:</strong> {{ amount }}</p>
+    <p style="margin: 5px 0;"><strong>Transaction Ref:</strong> {{ transaction_ref }}</p>
+    <p style="margin: 5px 0; color: #dc2626;"><strong>Reason:</strong> {{ reason }}</p>
+</div>
+
+<div class="confession-card" style="border-left-color: #dc2626; color: #991b1b; background-color: #fef2f2;">
+    "Transaction Failed"
+</div>
+
+<p>Please try again or contact support if the issue persists.</p>
+{% endblock %}

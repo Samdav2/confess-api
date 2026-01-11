@@ -1,0 +1,17 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ user_name }}</strong>,</p>
+
+<p>Thank you for joining Confess! To complete your registration and start sharing your confessions, please verify your
+    email address.</p>
+
+<div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+    <a href="{{ verification_link }}" class="cta-button">Verify Email Address</a>
+</div>
+
+<p>If the button above doesn't work, you can copy and paste the following link into your browser:</p>
+<p><a href="{{ verification_link }}">{{ verification_link }}</a></p>
+
+<p>If you did not create an account with us, please ignore this email.</p>
+{% endblock %}

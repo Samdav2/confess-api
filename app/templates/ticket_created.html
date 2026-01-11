@@ -1,0 +1,21 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<p>Your support ticket has been created successfully.</p>
+
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+    <p style="margin: 5px 0;"><strong>Ticket ID:</strong> #{{ ticket_id }}</p>
+    <p style="margin: 5px 0;"><strong>Subject:</strong> {{ subject }}</p>
+</div>
+
+<p><strong>Message Preview:</strong></p>
+<p style="font-style: italic; color: #64748b;">"{{ message_preview }}"</p>
+
+<div class="confession-card">
+    "We've received your request and will get back to you soon. 💬"
+</div>
+
+<p>You can reply to this email to add more information to your ticket.</p>
+{% endblock %}
