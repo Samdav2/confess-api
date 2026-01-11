@@ -20,6 +20,7 @@ packages = [
     "slowapi",
     "email-validator",
     "httpx"
+    "psycopg2"
 ]
 
 def install(package):
