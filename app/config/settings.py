@@ -8,10 +8,14 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "CONFESS BACKEND"
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: str = os.getenv("DATABASE_URL")
+    print(f"DEBUG: Original DATABASE_URL: {DATABASE_URL}")
     if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        print(f"DEBUG: Replaced postgres:// with postgresql+asyncpg://")
     elif DATABASE_URL and DATABASE_URL.startswith("postgresql://") and "asyncpg" not in DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+        print(f"DEBUG: Replaced postgresql:// with postgresql+asyncpg://")
+    print(f"DEBUG: Final DATABASE_URL: {DATABASE_URL}")
     SECRET_KEY: str = os.getenv("SECRET_KEY")
     ALGORITHM: str = "RS256"
 
