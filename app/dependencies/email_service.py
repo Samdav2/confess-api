@@ -55,7 +55,7 @@ class EmailService:
         html_part = EmailService._render_template(template_name, template_body)
 
         # Basic text part fallback
-        text_part = f"CONFESS | {subject}\n\n"
+        text_part = f"{subject}\n\n"
         text_part += f"This email requires an HTML-compatible client. Please view this message in a modern email client."
         if template_body.get("title"):
             text_part = f"{template_body.get('title')}\n\n(Please view in an HTML-compatible client)"
@@ -66,12 +66,12 @@ class EmailService:
             # Prepare inline attachments
             inlined_attachments = []
             images = [
-                ("logo.png", "logo"),
-                ("image1.png", "image1"),
-                ("image2.png", "image2")
+                ("logo.png", "logo", "image/png"),
+                ("image1.jpg", "image1", "image/jpeg"),
+                ("image2.png", "image2", "image/png")
             ]
 
-            for filename, cid in images:
+            for filename, cid, content_type in images:
                 file_path = ASSETS_FOLDER / filename
                 if file_path.exists():
                     try:
@@ -79,7 +79,7 @@ class EmailService:
                             img_data = f.read()
                             b64_content = base64.b64encode(img_data).decode('utf-8')
                             inlined_attachments.append({
-                                "ContentType": "image/png",
+                                "ContentType": content_type,
                                 "Filename": filename,
                                 "ContentID": cid,
                                 "Base64Content": b64_content
@@ -89,10 +89,20 @@ class EmailService:
                 else:
                     logger.warning(f"Image not found: {file_path}")
 
+            # Generate unique CustomID for tracking
+            import hashlib
+            import time
+            unique_id = hashlib.md5(f"{email_to}{time.time()}".encode()).hexdigest()[:12]
+            custom_id = f"confess-{template_name.replace('.html', '')}-{unique_id}"
+
             message_payload = {
                 "From": {
                     "Email": settings.MAIL_FROM,
                     "Name": settings.MAILJET_SENDER_NAME if hasattr(settings, 'MAILJET_SENDER_NAME') else settings.MAIL_FROM_NAME
+                },
+                "ReplyTo": {
+                    "Email": settings.MAIL_FROM,
+                    "Name": settings.MAIL_FROM_NAME
                 },
                 "To": [
                     {
@@ -100,10 +110,13 @@ class EmailService:
                         "Name": template_body.get("name", "User")
                     }
                 ],
-                "Subject": f"CONFESS | {subject}",
+                "Subject": subject,
                 "TextPart": text_part,
                 "HTMLPart": html_part,
-                "CustomID": "AppGettingStartedTest"
+                "CustomID": custom_id,
+                "Headers": {
+                    "List-Unsubscribe": f"<mailto:unsubscribe@confess.com.ng?subject=Unsubscribe>, <https://confess.com.ng/unsubscribe>"
+                }
             }
 
             if inlined_attachments:

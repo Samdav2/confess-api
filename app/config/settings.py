@@ -53,8 +53,9 @@ class Settings(BaseSettings):
     MAIL_FROM_NAME: str = "CONFESS"
 
     # Mailjet Settings
-    MAILJET_API_KEY: str = "15063b1f9aba1a28ed0f75c52218a1f3"
-    MAILJET_SECRET_KEY: str = "f726d14e3a885aec8246a1192cdab39f"
+    MAILJET_API_KEY: str = os.getenv("MAILJET_API_KEY", "")
+    MAILJET_SECRET_KEY: str = os.getenv("MAILJET_SECRET_KEY", "")
+    MAILJET_SENDER_NAME: str = "Confess Team"
 
 
 

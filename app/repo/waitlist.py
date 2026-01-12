@@ -21,7 +21,7 @@ async def create_waitlist_repo(waitlist: WaitlistCreate, db: AsyncSession) -> Wa
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Creating Waitlist. Full Error code: {e}")
     else:
-        raise HTTPException(status_code=404, detail="User Already Registered to Wait List")
+        raise HTTPException(status_code=409, detail="User Already Registered to Wait List")
 
 async def get_user_waitlist_repo(db: AsyncSession, email: str) -> Waitlist:
     """
