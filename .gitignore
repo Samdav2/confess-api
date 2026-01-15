@@ -141,3 +141,4 @@ cython_debug/
 # Project specific
 uploaded_files/
 verification_output/
+certs/

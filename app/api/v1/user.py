@@ -1,0 +1,46 @@
+from app.service.user import create_user_service
+from app.db.sessions import get_session
+from sqlmodel.ext.asyncio.session import AsyncSession
+from fastapi import Depends, APIRouter, BackgroundTasks
+from app.schemas.user import UserCreate, UserRead
+from app.dependencies.email_service import email_service
+from app.service.auth import create_verification_token, generate_verification_link
+
+router = APIRouter(prefix="/user")
+
+@router.post("/create")
+async def create_user(
+        new_user: UserCreate,
+        background_tasks: BackgroundTasks,
+        db: AsyncSession = Depends(get_session)
+) -> UserRead:
+    """
+    Create a new user account and send welcome + verification emails.
+
+    :param new_user: User registration data
+    :param background_tasks: Background task queue for emails
+    :param db: Database session
+    """
+    user_obj = await create_user_service(db=db, new_user=new_user)
+
+    verification_token = create_verification_token(
+        user_id=str(user_obj.id),
+        email=user_obj.email,
+        purpose="email_verification"
+    )
+    verification_link = generate_verification_link(verification_token)
+
+    email_service.send_user_welcome_email(
+        background_tasks=background_tasks,
+        email_to=user_obj.email,
+        name=user_obj.username,
+    )
+
+    email_service.send_email_verification(
+        background_tasks=background_tasks,
+        email_to=user_obj.email,
+        name=user_obj.username,
+        verification_link=verification_link
+    )
+
+    return user_obj

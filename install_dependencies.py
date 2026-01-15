@@ -1,7 +1,6 @@
 import subprocess
 import sys
 
-# === List of required packages with versions ===
 packages = [
     "fastapi",
     "uvicorn[standard]",
@@ -19,8 +18,11 @@ packages = [
     "aiosqlite",
     "slowapi",
     "email-validator",
-    "httpx"
-    "psycopg2"
+    "httpx",
+    "psycopg2",
+    "PyJWT",
+    "cryptography",
+    "google-auth",
 ]
 
 def install(package):
