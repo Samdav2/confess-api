@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi import Depends, APIRouter, BackgroundTasks
 from app.schemas.user import UserCreate, UserRead
 from app.dependencies.email_service import email_service
-from app.service.auth import create_verification_token, generate_verification_link
+from app.service.auth import generate_verification_code, store_verification_code
 
 router = APIRouter(prefix="/user")
 
@@ -23,12 +23,13 @@ async def create_user(
     """
     user_obj = await create_user_service(db=db, new_user=new_user)
 
-    verification_token = create_verification_token(
-        user_id=str(user_obj.id),
+    # Generate and store verification code
+    verification_code = generate_verification_code()
+    store_verification_code(
         email=user_obj.email,
-        purpose="email_verification"
+        code=verification_code,
+        user_id=str(user_obj.id)
     )
-    verification_link = generate_verification_link(verification_token)
 
     email_service.send_user_welcome_email(
         background_tasks=background_tasks,
@@ -40,7 +41,7 @@ async def create_user(
         background_tasks=background_tasks,
         email_to=user_obj.email,
         name=user_obj.username,
-        verification_link=verification_link
+        verification_code=verification_code
     )
 
     return user_obj

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 from uuid import UUID
 import jwt
+import secrets
 from bcrypt import hashpw, gensalt, checkpw
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -15,11 +16,14 @@ from app.schemas.auth import GoogleCallBack
 import requests
 from google.oauth2 import id_token
 from dotenv import load_dotenv
+from cachetools import TTLCache
 from app.schemas.user import UserGoogleCreate
 import os
 
 load_dotenv()
 
+# Cache for verification codes: TTL 5 minutes (300 seconds)
+Verification_cache = TTLCache(maxsize=1000, ttl=300)
 
 EMAIL_VERIFICATION_EXPIRE_HOURS = 24
 PASSWORD_RESET_EXPIRE_HOURS = 1
@@ -113,6 +117,68 @@ def verify_verification_token(token: str, expected_purpose: str) -> Tuple[str, s
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid token"
         )
+
+
+def generate_verification_code() -> str:
+    """
+    Generate a secure 6-digit verification code.
+
+    Returns:
+        6-digit string code (100000-999999)
+    """
+    return str(secrets.randbelow(900000) + 100000)
+
+
+def store_verification_code(email: str, code: str, user_id: str) -> None:
+    """
+    Store verification code in cache.
+
+    Args:
+        email: User's email (cache key)
+        code: 6-digit verification code
+        user_id: User's ID
+    """
+    Verification_cache[email.lower()] = {
+        "code": code,
+        "user_id": user_id,
+        "created_at": datetime.now(timezone.utc)
+    }
+
+
+def verify_stored_code(email: str, submitted_code: str) -> str:
+    """
+    Verify submitted code against stored code.
+
+    Args:
+        email: User's email
+        submitted_code: Code submitted by user
+
+    Returns:
+        User ID if code is valid
+
+    Raises:
+        HTTPException: If code is invalid or expired
+    """
+    email_lower = email.lower()
+
+    if email_lower not in Verification_cache:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code has expired. Please request a new one."
+        )
+
+    stored_data = Verification_cache[email_lower]
+
+    if stored_data["code"] != submitted_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code"
+        )
+
+    # Remove code from cache after successful verification
+    del Verification_cache[email_lower]
+
+    return stored_data["user_id"]
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -263,6 +329,61 @@ async def verify_user_email(db: AsyncSession, token: str) -> User:
         )
 
     if user.email != email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email mismatch"
+        )
+
+    if user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is already verified"
+        )
+
+    user.email_verified = True
+    user.updated_at = datetime.now(timezone.utc)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    return user
+
+
+async def verify_user_email_with_code(db: AsyncSession, email: str, code: str) -> User:
+    """
+    Verify user's email using 6-digit verification code.
+
+    Args:
+        db: Database session
+        email: User's email address
+        code: 6-digit verification code
+
+    Returns:
+        Updated User object
+
+    Raises:
+        HTTPException: If code is invalid, expired, or user not found
+    """
+    # Verify the code and get user_id
+    user_id_str = verify_stored_code(email, code)
+
+    try:
+        user_id = UUID(user_id_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user ID"
+        )
+
+    user = await get_user_by_id(db, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if user.email.lower() != email.lower():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email mismatch"

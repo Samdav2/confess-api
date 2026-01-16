@@ -87,6 +87,12 @@ class VerifyEmailRequest(BaseModel):
     token: str
 
 
+class VerifyEmailCodeRequest(BaseModel):
+    """Request schema for email verification via 6-digit code"""
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6)
+
+
 class VerifyEmailResponse(BaseModel):
     """Response schema for email verification"""
     message: str

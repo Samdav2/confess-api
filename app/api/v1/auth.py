@@ -21,19 +21,20 @@ from app.schemas.auth import (
     ResetPasswordResponse,
     SendVerificationRequest,
     SendVerificationResponse,
-    VerifyEmailRequest,
+    VerifyEmailCodeRequest,
     VerifyEmailResponse,
     UserResponse,
     GoogleCallBack,
 )
 from app.service.auth import (
     login_user,
-    verify_user_email,
+    verify_user_email_with_code,
     reset_user_password,
     get_user_by_email,
-    create_verification_token,
-    generate_verification_link,
+    generate_verification_code,
+    store_verification_code,
     generate_password_reset_link,
+    create_verification_token,
     google_callback_login,
     google_callback_signup,
 )
@@ -109,7 +110,7 @@ async def login_for_access_token(
 @router.post(
     "/send-verification",
     response_model=SendVerificationResponse,
-    summary="Send email verification"
+    summary="Send email verification code"
 )
 async def send_verification_email(
     request: SendVerificationRequest,
@@ -117,18 +118,18 @@ async def send_verification_email(
     db: AsyncSession = Depends(get_session)
 ):
     """
-    Send email verification link to user.
+    Send email verification code to user.
 
     - Finds user by email
-    - Generates new verification token
-    - Sends verification email
+    - Generates 6-digit verification code
+    - Sends verification email with code
     """
     user = await get_user_by_email(db, request.email)
 
     if not user:
         # Don't reveal if email exists for security
         return SendVerificationResponse(
-            message="If this email is registered, a verification link has been sent."
+            message="If this email is registered, a verification code has been sent."
         )
 
     if user.email_verified:
@@ -136,45 +137,45 @@ async def send_verification_email(
             message="Email is already verified."
         )
 
-    # Generate verification token and link
-    verification_token = create_verification_token(
-        user_id=str(user.id),
+    # Generate and store verification code
+    verification_code = generate_verification_code()
+    store_verification_code(
         email=user.email,
-        purpose="email_verification"
+        code=verification_code,
+        user_id=str(user.id)
     )
-    verification_link = generate_verification_link(verification_token)
 
-    # Send verification email
+    # Send verification email with code
     email_service.send_email_verification(
         background_tasks=background_tasks,
         email_to=user.email,
         name=user.username,
-        verification_link=verification_link
+        verification_code=verification_code
     )
 
     return SendVerificationResponse(
-        message="If this email is registered, a verification link has been sent."
+        message="If this email is registered, a verification code has been sent."
     )
 
 
 @router.post(
     "/verify-email",
     response_model=VerifyEmailResponse,
-    summary="Verify email with token"
+    summary="Verify email with code"
 )
 async def verify_email(
-    request: VerifyEmailRequest,
+    request: VerifyEmailCodeRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_session)
 ):
     """
-    Verify user's email address using verification token.
+    Verify user's email address using 6-digit verification code.
 
-    - Validates the verification token
+    - Validates the verification code
     - Marks email as verified
     - Sends confirmation email
     """
-    user = await verify_user_email(db, request.token)
+    user = await verify_user_email_with_code(db, request.email, request.code)
 
     # Send verification success email
     email_service.send_email_verified_notice(
@@ -192,38 +193,38 @@ async def verify_email(
 @router.get(
     "/resend-verification",
     response_model=SendVerificationResponse,
-    summary="Resend email verification for logged-in user"
+    summary="Resend email verification code for logged-in user"
 )
 async def resend_verification_email(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Resend email verification for the currently authenticated user.
+    Resend email verification code for the currently authenticated user.
     """
     if current_user.email_verified:
         return SendVerificationResponse(
             message="Email is already verified."
         )
 
-    # Generate verification token and link
-    verification_token = create_verification_token(
-        user_id=str(current_user.id),
+    # Generate and store verification code
+    verification_code = generate_verification_code()
+    store_verification_code(
         email=current_user.email,
-        purpose="email_verification"
+        code=verification_code,
+        user_id=str(current_user.id)
     )
-    verification_link = generate_verification_link(verification_token)
 
-    # Send verification email
+    # Send verification email with code
     email_service.send_email_verification(
         background_tasks=background_tasks,
         email_to=current_user.email,
         name=current_user.username,
-        verification_link=verification_link
+        verification_code=verification_code
     )
 
     return SendVerificationResponse(
-        message="Verification email has been sent."
+        message="Verification code has been sent to your email."
     )
 
 

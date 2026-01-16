@@ -190,14 +190,14 @@ class EmailService:
             background_tasks: BackgroundTasks,
             email_to: EmailStr,
             name: str,
-            verification_link: str
+            verification_code: str
     ):
-        """2. (User) Sent to verify a new user's email address."""
+        """2. (User) Sent to verify a new user's email address with a 6-digit code."""
         EmailService._add_task(
             background_tasks,
             "Verify Your Email Address",
             email_to,
-            {"title": "Verify Your Email", "user_name": name, "verification_link": verification_link},
+            {"title": "Verify Your Email", "user_name": name, "verification_code": verification_code},
             "email_verification.html"
         )
 
