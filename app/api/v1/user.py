@@ -2,7 +2,7 @@ from app.service.user import create_user_service
 from app.db.sessions import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi import Depends, APIRouter, BackgroundTasks
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserResponse
 from app.dependencies.email_service import email_service
 from app.service.auth import generate_verification_code, store_verification_code
 
@@ -13,7 +13,7 @@ async def create_user(
         new_user: UserCreate,
         background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_session)
-) -> UserRead:
+) -> UserResponse:
     """
     Create a new user account and send welcome + verification emails.
 

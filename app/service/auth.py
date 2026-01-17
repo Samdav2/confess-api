@@ -383,7 +383,7 @@ async def verify_user_email_with_code(db: AsyncSession, email: str, code: str) -
             detail="User not found"
         )
 
-    if user.email.lower() != email.lower():
+    if user.dict().get("email").lower() != email.lower():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email mismatch"
@@ -400,8 +400,9 @@ async def verify_user_email_with_code(db: AsyncSession, email: str, code: str) -
     db.add(user)
     await db.commit()
     await db.refresh(user)
+    token = create_access_token(user_id=str(user.id), email=user.email)
 
-    return user
+    return user, token
 
 
 async def reset_user_password(db: AsyncSession, token: str, new_password: str) -> User:

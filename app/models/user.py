@@ -8,10 +8,10 @@ from uuid import UUID, uuid4
 class User(SQLModel, table=True):
     __tablename__ = "users"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    username: str = Field(unique=True, index=True)
+    username: str = Field(unique=False, index=True)
     email: str = Field(unique=True, index=True)
     password: str = Field(nullable=False)
-    referred_by: str = Field(index=True)
+    referred_by: str = Field(index=True, nullable=True)
     referral_code: str = Field(index=True, unique=True)
     email_verified: bool = Field(default=False, index=True)
     google_auth: bool = Field(default=False, nullable=True)

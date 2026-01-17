@@ -26,6 +26,15 @@ class UserRead(UserBase):
     class Config:
         from_attributes = True
 
+class UserResponse(UserBase):
+    referral_code: str
+    email_verified: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class UserGoogleCreate(UserBase):
     google_auth: bool = True
 
