@@ -160,7 +160,6 @@ async def send_verification_email(
 
 @router.post(
     "/verify-email",
-    response_model=VerifyEmailResponse,
     summary="Verify email with code"
 )
 async def verify_email(
@@ -175,7 +174,8 @@ async def verify_email(
     - Marks email as verified
     - Sends confirmation email
     """
-    user = await verify_user_email_with_code(db, request.email, request.code)
+    response = await verify_user_email_with_code(db, str(request.email), request.code)
+    user = response["user"]
 
     # Send verification success email
     email_service.send_email_verified_notice(
@@ -184,11 +184,10 @@ async def verify_email(
         name=user.username
     )
 
-    return VerifyEmailResponse(
+    return {"msg": VerifyEmailResponse(
         message="Email verified successfully!",
         email_verified=True
-    )
-
+    ), "token": response["token"]}
 
 @router.get(
     "/resend-verification",

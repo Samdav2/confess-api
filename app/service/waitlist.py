@@ -1,5 +1,5 @@
 from app.repo.waitlist import create_waitlist_repo
-from sqlmodel.ext.asyncio.session import  AsyncSession
+from sqlmodel.ext.asyncio.session import AsyncSession
 from app.schemas.waitlist import WaitlistCreate, Waitlist
 
 

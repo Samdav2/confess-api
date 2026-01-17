@@ -191,8 +191,8 @@ async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
     """Get user by ID"""
     statement = select(User).where(User.id == user_id)
-    result = await db.execute(statement)
-    return result.scalar_one_or_none()
+    result = await db.exec(statement)
+    return result.first()
 
 
 async def signup_user(
@@ -349,7 +349,7 @@ async def verify_user_email(db: AsyncSession, token: str) -> User:
     return user
 
 
-async def verify_user_email_with_code(db: AsyncSession, email: str, code: str) -> User:
+async def verify_user_email_with_code(db: AsyncSession, email: str, code: str):
     """
     Verify user's email using 6-digit verification code.
 
@@ -364,7 +364,6 @@ async def verify_user_email_with_code(db: AsyncSession, email: str, code: str) -
     Raises:
         HTTPException: If code is invalid, expired, or user not found
     """
-    # Verify the code and get user_id
     user_id_str = verify_stored_code(email, code)
 
     try:
@@ -402,7 +401,7 @@ async def verify_user_email_with_code(db: AsyncSession, email: str, code: str) -
     await db.refresh(user)
     token = create_access_token(user_id=str(user.id), email=user.email)
 
-    return user, token
+    return {"user": user, "token": token}
 
 
 async def reset_user_password(db: AsyncSession, token: str, new_password: str) -> User:
