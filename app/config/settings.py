@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         "https://confess-git-development-feranmibas-projects.vercel.app/"
 
     ]
+    
     ALLOWED_HOSTS: List[str] = ["*"]
 
     @property
