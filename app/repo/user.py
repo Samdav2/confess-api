@@ -26,15 +26,14 @@ async def create_user(new_user: UserCreate, db: AsyncSession) -> UserRead:
         await db.rollback()
         error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
 
+        # Debug logging to identify the exact constraint violation
+        logger.error(f"IntegrityError during user creation: {error_msg}")
+        logger.error(f"Full error: {e}")
+
         if "email" in error_msg:
             raise HTTPException(
                 status_code=409,
                 detail="A user with this email already exists"
-            )
-        elif "username" in error_msg:
-            raise HTTPException(
-                status_code=409,
-                detail="This username is already taken"
             )
         elif "referral_code" in error_msg:
             raise HTTPException(
@@ -42,9 +41,11 @@ async def create_user(new_user: UserCreate, db: AsyncSession) -> UserRead:
                 detail="Referral code conflict. Please try again"
             )
         else:
+            # Log the unexpected constraint for debugging
+            logger.error(f"Unknown IntegrityError constraint: {error_msg}")
             raise HTTPException(
                 status_code=409,
-                detail="User already exists"
+                detail=f"User already exists (constraint: {error_msg[:100]})"
             )
 
     except ValidationError as e:

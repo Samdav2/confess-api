@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime
 from sqlmodel import SQLModel, Field
@@ -11,7 +12,7 @@ class User(SQLModel, table=True):
     username: str = Field(unique=False, index=True)
     email: str = Field(unique=True, index=True)
     password: str = Field(nullable=False)
-    referred_by: str = Field(index=True, nullable=True)
+    referred_by: Optional[str] = Field(default=None, index=True, nullable=True)
     referral_code: str = Field(index=True, unique=True)
     email_verified: bool = Field(default=False, index=True)
     google_auth: bool = Field(default=False, nullable=True)
