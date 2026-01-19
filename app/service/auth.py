@@ -459,7 +459,7 @@ def generate_verification_link(token: str, base_url: str = "https://confess.com.
 
 def generate_password_reset_link(token: str, base_url: str = "https://confess.com.ng") -> str:
     """Generate password reset link"""
-    return f"{base_url}/reset-password?token={token}"
+    return f"{base_url}/auth/reset-password?token={token}"
 
 
 async def google_callback_login(token: GoogleCallBack, db: AsyncSession) -> Tuple[User, str, int]:

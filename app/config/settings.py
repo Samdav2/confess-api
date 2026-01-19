@@ -16,10 +16,10 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "https://confess.com.ng",
         "https://www.confess.com.ng",
-        "https://confess-git-development-feranmibas-projects.vercel.app/"
+        "https://confess-git-development-feranmibas-projects.vercel.app"
 
     ]
-    
+
     ALLOWED_HOSTS: List[str] = ["*"]
 
     @property
