@@ -452,12 +452,12 @@ async def reset_user_password(db: AsyncSession, token: str, new_password: str) -
     return user
 
 
-def generate_verification_link(token: str, base_url: str = "https://confess.com.ng") -> str:
+def generate_verification_link(token: str, base_url: str = "https://confess-git-development-feranmibas-projects.vercel.app") -> str:
     """Generate email verification link"""
     return f"{base_url}/verify-email?token={token}"
 
 
-def generate_password_reset_link(token: str, base_url: str = "https://confess.com.ng") -> str:
+def generate_password_reset_link(token: str, base_url: str = "https://confess-git-development-feranmibas-projects.vercel.app") -> str:
     """Generate password reset link"""
     return f"{base_url}/auth/reset-password?token={token}"
 
