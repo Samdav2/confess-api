@@ -397,4 +397,34 @@ class EmailService:
             template_name=template
         )
 
+    @staticmethod
+    def send_confess_notification(
+            background_tasks: BackgroundTasks,
+            email_to: str,
+            name: str,
+            sender_name: str,
+            message: str,
+            confess_type: str,
+            slug: str
+    ) -> None:
+        """
+        Send email notification for a confession.
+        """
+        subject_line = f"You have a new confession from {sender_name}"
+
+        EmailService._add_task(
+            background_tasks=background_tasks,
+            subject=subject_line,
+            email_to=email_to,
+            template_body={
+                "name": name,
+                "sender_name": sender_name,
+                "message": message,
+                "confess_type": confess_type,
+                "slug": slug,
+                "project_name": settings.PROJECT_NAME,
+            },
+            template_name="confess_notification.html"
+        )
+
 email_service = EmailService()

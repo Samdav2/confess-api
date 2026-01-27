@@ -1,8 +1,9 @@
 from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from uuid import UUID, uuid4
+from typing import List, Optional
 
 
 
@@ -24,3 +25,5 @@ class User(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False),
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+    confess_forms: Optional[List["ConfessForm"]] = Relationship(back_populates="user")
