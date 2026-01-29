@@ -423,6 +423,8 @@ class EmailService:
                 "confess_type": confess_type,
                 "slug": slug,
                 "project_name": settings.PROJECT_NAME,
+                "cta_link": f"{settings.FRONTEND_URL}/confess/{slug}",
+                "cta_text": "View Confession"
             },
             template_name="confess_notification.html"
         )

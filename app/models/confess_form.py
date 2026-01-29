@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 from sqlalchemy import Column, DateTime
 from sqlmodel import SQLModel, Field, Relationship
 from uuid import UUID, uuid4
@@ -26,7 +27,9 @@ class ConfessForm(SQLModel, table=True):
     delivery: DeliveryMethod = Field(nullable=False, default=DeliveryMethod.EMAIL, index=True)
     email: str = Field(nullable=True, index=True)
     phone: str = Field(nullable=True, index=True)
-    name: str = Field(nullable=True, index=True)
+
+    sender_name: Optional[str] = Field(default=None, nullable=True)
+    recipient_name: Optional[str] = Field(default=None, nullable=True)
     paid: bool = Field(default=True, nullable=True)
     slug: str = Field(nullable=True, index=True)
     created_at: datetime = Field(
@@ -39,4 +42,3 @@ class ConfessForm(SQLModel, table=True):
     )
 
     user: "User" = Relationship(back_populates="confess_forms")
-

@@ -25,7 +25,9 @@ class ConfessFormCreate(BaseModel):
     delivery: DeliveryMethod = Field(default=DeliveryMethod.EMAIL)
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    name: Optional[str] = Field(None, max_length=100)
+
+    sender_name: Optional[str] = Field(None, max_length=100)
+    recipient_name: Optional[str] = Field(None, max_length=100)
 
     @validator('email')
     def validate_email_delivery(cls, v, values):
@@ -55,7 +57,9 @@ class ConfessFormUpdate(BaseModel):
     delivery: Optional[DeliveryMethod] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    name: Optional[str] = Field(None, max_length=100)
+
+    sender_name: Optional[str] = Field(None, max_length=100)
+    recipient_name: Optional[str] = Field(None, max_length=100)
 
 
 class ConfessFormResponse(BaseModel):
@@ -69,7 +73,9 @@ class ConfessFormResponse(BaseModel):
     delivery: DeliveryMethod
     email: Optional[str]
     phone: Optional[str]
-    name: Optional[str]
+
+    sender_name: Optional[str]
+    recipient_name: Optional[str]
     slug: Optional[str]
     created_at: datetime
     updated_at: datetime

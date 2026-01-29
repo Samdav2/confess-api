@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import Optional
 from app.db.sessions import get_session
 from app.dependencies.auth import get_current_user
+from app.models.user import User
 from app.schemas.confess_form import (
     ConfessFormCreate,
     ConfessFormUpdate,
@@ -12,9 +13,7 @@ from app.schemas.confess_form import (
 )
 from app.service.confess_form import ConfessFormService
 
-router = APIRouter(
-    prefix="/api/v1/confess-forms",
-)
+router = APIRouter()
 
 
 async def get_confess_service(session: AsyncSession = Depends(get_session)) -> ConfessFormService:
@@ -30,7 +29,7 @@ async def get_confess_service(session: AsyncSession = Depends(get_session)) -> C
 )
 async def create_confess_form(
         confess_data: ConfessFormCreate,
-        current_user_id: UUID = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
@@ -46,7 +45,7 @@ async def create_confess_form(
     - **phone**: Phone number (required if delivery is whatsapp)
     - **name**: Recipient name (optional)
     """
-    return await service.create_confess_form(current_user_id, confess_data)
+    return await service.create_confess_form(current_user.id, confess_data)
 
 
 @router.post(
@@ -68,13 +67,30 @@ async def send_confess_form(
 
 
 @router.get(
+    "/slug/{slug}",
+    response_model=ConfessFormResponse,
+    summary="Get a confess form by slug",
+    status_code=status.HTTP_200_OK
+)
+async def get_confess_form_by_slug(
+        slug: str,
+        service: ConfessFormService = Depends(get_confess_service)
+):
+    """
+    Get a confess form by its unique slug.
+    This endpoint is public.
+    """
+    return await service.get_confess_form_by_slug(slug)
+
+
+@router.get(
     "/{confess_id}",
     response_model=ConfessFormResponse,
     summary="Get a confess form by ID"
 )
 async def get_confess_form(
         confess_id: UUID,
-        current_user_id: UUID = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
@@ -82,7 +98,7 @@ async def get_confess_form(
 
     Users can only access their own confess forms.
     """
-    return await service.get_confess_form(confess_id, current_user_id)
+    return await service.get_confess_form(confess_id, current_user.id)
 
 
 @router.get(
@@ -94,7 +110,7 @@ async def get_user_confess_forms(
         page: int = Query(default=1, ge=1, description="Page number"),
         page_size: int = Query(default=10, ge=1, le=100, description="Items per page"),
         confess_type: Optional[str] = Query(default=None, description="Filter by confess type"),
-        current_user_id: UUID = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
@@ -105,7 +121,7 @@ async def get_user_confess_forms(
     - **confess_type**: Optional filter by confession type
     """
     return await service.get_user_confess_forms(
-        user_id=current_user_id,
+        user_id=current_user.id,
         page=page,
         page_size=page_size,
         confess_type=confess_type
@@ -120,7 +136,7 @@ async def get_user_confess_forms(
 async def update_confess_form(
         confess_id: UUID,
         update_data: ConfessFormUpdate,
-        current_user_id: UUID = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
@@ -129,7 +145,7 @@ async def update_confess_form(
     Users can only update their own confess forms.
     Only provided fields will be updated.
     """
-    return await service.update_confess_form(confess_id, current_user_id, update_data)
+    return await service.update_confess_form(confess_id, current_user.id, update_data)
 
 
 @router.delete(
@@ -139,7 +155,7 @@ async def update_confess_form(
 )
 async def delete_confess_form(
         confess_id: UUID,
-        current_user_id: UUID = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
@@ -147,7 +163,7 @@ async def delete_confess_form(
 
     Users can only delete their own confess forms.
     """
-    await service.delete_confess_form(confess_id, current_user_id)
+    await service.delete_confess_form(confess_id, current_user.id)
     return None
 
 

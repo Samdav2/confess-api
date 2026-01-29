@@ -5,7 +5,7 @@ from fastapi import Depends, APIRouter, BackgroundTasks
 from app.schemas.waitlist import WaitlistCreate
 from app.dependencies.email_service import email_service
 
-router = APIRouter(tags=["waitlist"], prefix="/waitlist")
+router = APIRouter(tags=["waitlist"])
 
 @router.post("/create")
 async def create_waitlist(

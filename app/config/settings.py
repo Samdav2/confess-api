@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL")
     SECRET_KEY: str = os.getenv("SECRET_KEY")
     ALGORITHM: str = "RS256"
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://confess.com.ng")
 
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:3000",

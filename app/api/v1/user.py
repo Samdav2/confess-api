@@ -6,7 +6,7 @@ from app.schemas.user import UserCreate, UserResponse
 from app.dependencies.email_service import email_service
 from app.service.auth import generate_verification_code, store_verification_code
 
-router = APIRouter(prefix="/user")
+router = APIRouter()
 
 @router.post("/create")
 async def create_user(

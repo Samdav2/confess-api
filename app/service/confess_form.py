@@ -76,6 +76,21 @@ class ConfessFormService:
 
         return ConfessFormResponse.model_validate(confess_form)
 
+    async def get_confess_form_by_slug(
+            self,
+            slug: str
+    ) -> ConfessFormResponse:
+        """Get a confess form by slug"""
+        confess_form = await self.repository.get_by_slug(slug)
+
+        if not confess_form:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Confess form not found"
+            )
+
+        return ConfessFormResponse.model_validate(confess_form)
+
     async def get_user_confess_forms(
             self,
             user_id: UUID,
@@ -206,8 +221,8 @@ class ConfessFormService:
             email_service.send_confess_notification(
                 background_tasks=background_tasks,
                 email_to=confess_form.email,
-                name=confess_form.name or "Friend",
-                sender_name="Someone", # You might want to get this from user_id if not anonymous
+                name=confess_form.recipient_name or "Friend",
+                sender_name=confess_form.sender_name or "Someone", # You might want to get this from user_id if not anonymous
                 message=confess_form.message,
                 confess_type=confess_form.confess_type,
                 slug=slug
@@ -229,8 +244,8 @@ class ConfessFormService:
              email_service.send_confess_notification(
                 background_tasks=background_tasks,
                 email_to=confess_form.email,
-                name=confess_form.name or "Friend",
-                sender_name="Someone",
+                name=confess_form.recipient_name or "Friend",
+                sender_name=confess_form.sender_name or "Someone",
                 message=confess_form.message,
                 confess_type=confess_form.confess_type,
                 slug=slug
