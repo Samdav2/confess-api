@@ -54,9 +54,11 @@ app.add_middleware(SlowAPIMiddleware)
 
 
 from app.api.v1.auth import router as auth_router
+from app.api.feedback import feedback_router
 
 # Auth endpoints MUST be public so Swagger can get a token
 app.include_router(auth_router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(feedback_router, prefix=f"{settings.API_V1_STR}/feedback", tags=["feedback"])
 # All other API endpoints require the X-API-KEY
 app.include_router(api_router, prefix=settings.API_V1_STR, dependencies=[Depends(get_api_key)])
 

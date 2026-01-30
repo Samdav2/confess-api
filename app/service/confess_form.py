@@ -5,12 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.confess_form import ConfessForm
 from app.schemas.confess_form import ConfessFormCreate, ConfessFormUpdate, ConfessFormResponse, ConfessFormListResponse
 from app.repo.confess_form import ConfessFormRepository
+from app.service.gemini_service import GeminiService
+from app.models.confess_form import ConfessForm, ConfessionAIMessage
 from fastapi import HTTPException, status, BackgroundTasks
+import os
 
 
 class ConfessFormService:
     def __init__(self, session: AsyncSession):
         self.repository = ConfessFormRepository(session)
+        self.gemini_service = GeminiService(os.getenv("GEMINI_API_KEY"))
 
     def _generate_unique_slug(self) -> str:
         """Generate a random 8-character slug"""
@@ -51,7 +55,34 @@ class ConfessFormService:
         )
 
         created_form = await self.repository.create(confess_form)
-        return ConfessFormResponse.model_validate(created_form)
+
+        # Generate and save AI message
+        try:
+            ai_message_text = await self.gemini_service.generate_confession_message(
+                tone=confess_data.tone,
+                confess_type=confess_data.confess_type,
+                recipient_name=confess_data.recipient_name
+            )
+
+            ai_message = ConfessionAIMessage(
+                confess_form_id=created_form.id,
+                message=ai_message_text
+            )
+            self.repository.session.add(ai_message)
+            await self.repository.session.commit()
+
+            # Refresh form to get the relationship
+            await self.repository.session.refresh(created_form)
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to generate AI message: {e}")
+
+        return ConfessFormResponse(
+            **created_form.model_dump(),
+            ai_message=created_form.ai_message.message if created_form.ai_message else None
+        )
 
     async def get_confess_form(
             self,
@@ -74,7 +105,10 @@ class ConfessFormService:
                 detail="Not authorized to access this confess form"
             )
 
-        return ConfessFormResponse.model_validate(confess_form)
+        return ConfessFormResponse(
+            **confess_form.model_dump(),
+            ai_message=confess_form.ai_message.message if confess_form.ai_message else None
+        )
 
     async def get_confess_form_by_slug(
             self,
@@ -89,7 +123,10 @@ class ConfessFormService:
                 detail="Confess form not found"
             )
 
-        return ConfessFormResponse.model_validate(confess_form)
+        return ConfessFormResponse(
+            **confess_form.model_dump(),
+            ai_message=confess_form.ai_message.message if confess_form.ai_message else None
+        )
 
     async def get_user_confess_forms(
             self,
@@ -123,7 +160,12 @@ class ConfessFormService:
             total=total,
             page=page,
             page_size=page_size,
-            items=[ConfessFormResponse.model_validate(cf) for cf in confess_forms]
+            items=[
+                ConfessFormResponse(
+                    **cf.model_dump(),
+                    ai_message=cf.ai_message.message if cf.ai_message else None
+                ) for cf in confess_forms
+            ]
         )
 
     async def update_confess_form(
@@ -164,7 +206,10 @@ class ConfessFormService:
                 )
 
         updated_form = await self.repository.update(confess_id, update_dict)
-        return ConfessFormResponse.model_validate(updated_form)
+        return ConfessFormResponse(
+            **updated_form.model_dump(),
+            ai_message=updated_form.ai_message.message if updated_form.ai_message else None
+        )
 
     async def delete_confess_form(
             self,

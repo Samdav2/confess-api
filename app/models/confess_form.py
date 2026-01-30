@@ -15,6 +15,19 @@ class DeliveryMethod(str, Enum):
     EMAIL = "email"
     WHATSAPP = "whatsapp"
 
+
+class ConfessionAIMessage(SQLModel, table=True):
+    __tablename__ = 'confession_ai_messages'
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    confess_form_id: UUID = Field(foreign_key="confess_forms.id", nullable=False, unique=True)
+    message: str = Field(nullable=False)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+
+    confess_form: "ConfessForm" = Relationship(back_populates="ai_message")
+
 class ConfessForm(SQLModel, table=True):
     __tablename__ = 'confess_forms'
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -42,3 +55,4 @@ class ConfessForm(SQLModel, table=True):
     )
 
     user: "User" = Relationship(back_populates="confess_forms")
+    ai_message: Optional["ConfessionAIMessage"] = Relationship(back_populates="confess_form", sa_relationship_kwargs={"lazy": "selectin"})

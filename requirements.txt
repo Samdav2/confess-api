@@ -17,3 +17,4 @@ aiosqlite
 slowapi
 email-validator
 httpx
+google-genai

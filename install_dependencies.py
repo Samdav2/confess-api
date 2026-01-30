@@ -23,7 +23,8 @@ packages = [
     "PyJWT",
     "cryptography",
     "google-auth",
-    "cachetools"
+    "cachetools",
+    "google-genai"
 ]
 
 def install(package):

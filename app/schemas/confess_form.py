@@ -76,6 +76,7 @@ class ConfessFormResponse(BaseModel):
 
     sender_name: Optional[str]
     recipient_name: Optional[str]
+    ai_message: Optional[str] = None
     slug: Optional[str]
     created_at: datetime
     updated_at: datetime
