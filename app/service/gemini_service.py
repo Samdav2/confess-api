@@ -71,6 +71,11 @@ class GeminiService:
 
         for attempt in range(max_retries):
             try:
+                with open("gemini_debug.txt", "a") as f:
+                    f.write(f"\n--- Attempt {attempt + 1} ---\n")
+                    f.write(f"Model: {self.model_name}\n")
+                    f.write(f"API Key start: {self.client.api_key[:5] if self.client else 'NONE'}\n")
+
                 if not self.client:
                      logger.error("Gemini Client is None. API Key likely missing.")
                      raise ValueError("Gemini API Key is missing.")
@@ -105,12 +110,16 @@ class GeminiService:
 
                 # Extract text from response
                 if response and response.text:
+                    with open("gemini_debug.txt", "a") as f:
+                        f.write(f"SUCCESS: {response.text[:50]}...\n")
                     return response.text.strip()
                 else:
                     logger.warning("Empty response from Gemini API")
                     raise ValueError("Empty response from API")
 
             except Exception as e:
+                with open("gemini_debug.txt", "a") as f:
+                    f.write(f"ERROR: {str(e)}\n")
                 logger.exception(f"Attempt {attempt + 1}/{max_retries} failed to generate Gemini content")
                 error_msg = str(e)
 
@@ -130,7 +139,7 @@ class GeminiService:
                     logger.error(f"All {max_retries} attempts to generate content failed.")
 
         return (
-            f"Sometimes words fail to capture what's in the heart, but my feelings are real. "
+            f"[FALLBACK] Sometimes words fail to capture what's in the heart, but my feelings are real. "
             f"I wanted to share this confession with you, {recipient_name or 'Friend'}, "
             f"to let you know how much you mean to me and that I'm thinking of you sincerely."
         )

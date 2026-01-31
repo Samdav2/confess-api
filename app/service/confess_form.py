@@ -68,6 +68,9 @@ class ConfessFormService:
                 recipient_name=confess_data.recipient_name
             )
 
+            with open("service_debug.txt", "a") as f:
+                f.write(f"\nAI Message Generated: {ai_message_text[:50]}...\n")
+
             ai_message = ConfessionAIMessage(
                 confess_form_id=created_form.id,
                 message=ai_message_text
@@ -77,15 +80,26 @@ class ConfessFormService:
 
             # Refresh form to get the relationship
             await self.repository.session.refresh(created_form)
+
+            with open("service_debug.txt", "a") as f:
+                f.write(f"Rel Loaded: {True if created_form.ai_message else False}\n")
+                if created_form.ai_message:
+                    f.write(f"Rel Msg: {created_form.ai_message.message[:50]}...\n")
+
         except Exception as e:
+            with open("service_debug.txt", "a") as f:
+                f.write(f"SERVICE ERROR: {str(e)}\n")
             # Log error but don't fail the request
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to generate AI message: {e}", exc_info=True)
 
+        # Try to use the direct generated text first for the response
+        final_ai_message = ai_message_text if 'ai_message_text' in locals() else (created_form.ai_message.message if created_form.ai_message else None)
+
         return ConfessFormResponse(
             **created_form.model_dump(),
-            ai_message=created_form.ai_message.message if created_form.ai_message else None
+            ai_message=final_ai_message
         )
 
     async def get_confess_form(
