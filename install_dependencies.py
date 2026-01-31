@@ -24,7 +24,7 @@ packages = [
     "cryptography",
     "google-auth",
     "cachetools",
-    "google-genai"
+    "google-genai",
     "groq"
 ]
 
