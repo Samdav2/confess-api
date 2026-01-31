@@ -1,7 +1,10 @@
 from google import genai
+from google.genai import types
 from fastapi import HTTPException, status
 import os
 import logging
+
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -64,26 +67,60 @@ class GeminiService:
         Begin:
         """
 
-        try:
-            # The new SDK might have different async patterns.
-            # Assuming client.aio.models.generate_content for async
-            response = await self.client.aio.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config={
-                    'temperature': 0.7, # Slightly creative
-                }
-            )
-            return response.text.strip()
-        except Exception as e:
-            error_msg = str(e)
-            if "SAFETY" in error_msg.upper():
-                 logger.warning(f"Gemini safety filter triggered: {error_msg}")
-                 raise HTTPException(
-                     status_code=status.HTTP_400_BAD_REQUEST,
-                     detail="The request was flagged by safety filters. Please rephrase."
-                 )
+        max_retries = 3
+        retry_delay = 1  # Start with 1 second delay
 
-            logger.error(f"Error generating content with Gemini: {error_msg}")
-            # Fallback message
-            return f"I wanted to express my feelings ({confess_type}) to you, {recipient_name or 'Friend'}."
+        for attempt in range(max_retries):
+            try:
+                # The new SDK might have different async patterns.
+                # Assuming client.aio.models.generate_content for async
+                response = await self.client.aio.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config={
+                        'temperature': 0.7, # Slightly creative
+                        'safety_settings': [
+                            types.SafetySetting(
+                                category='HARM_CATEGORY_HATE_SPEECH',
+                                threshold='BLOCK_ONLY_HIGH'
+                            ),
+                            types.SafetySetting(
+                                category='HARM_CATEGORY_DANGEROUS_CONTENT',
+                                threshold='BLOCK_ONLY_HIGH'
+                            ),
+                            types.SafetySetting(
+                                category='HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                                threshold='BLOCK_ONLY_HIGH'
+                            ),
+                            types.SafetySetting(
+                                category='HARM_CATEGORY_HARASSMENT',
+                                threshold='BLOCK_ONLY_HIGH'
+                            )
+                        ]
+                    }
+                )
+                return response.text.strip()
+            except Exception as e:
+                error_msg = str(e)
+                logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {error_msg}")
+
+                # If safety filter is triggered, do not retry - it will likely fail again
+                if "SAFETY" in error_msg.upper():
+                     logger.warning(f"Gemini safety filter triggered: {error_msg}")
+                     raise HTTPException(
+                         status_code=status.HTTP_400_BAD_REQUEST,
+                         detail="The request was flagged by safety filters. Please rephrase."
+                     )
+
+                # If this was the last attempt, don't sleep
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+
+        logger.error(f"All {max_retries} attempts to generate content failed.")
+        # Fallback message
+        return (
+            f"Sometimes words fail to capture what's in the heart, but my feelings are real. "
+            f"I wanted to share this confession ({confess_type}) with you, {recipient_name or 'Friend'}, "
+            f"to let you know how much you mean to me and that I'm thinking of you sincerely."
+        )
