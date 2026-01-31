@@ -9,12 +9,16 @@ from app.service.gemini_service import GeminiService
 from app.models.confess_form import ConfessForm, ConfessionAIMessage
 from fastapi import HTTPException, status, BackgroundTasks
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
+API_KEY = os.getenv("GEMINI_API_KEY")
 
 
 class ConfessFormService:
     def __init__(self, session: AsyncSession):
         self.repository = ConfessFormRepository(session)
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = API_KEY
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f"Initializing ConfessFormService with API key starting with: {api_key[:5] if api_key else 'NONE'}")
