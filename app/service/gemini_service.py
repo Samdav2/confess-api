@@ -3,7 +3,6 @@ from google.genai import types
 from fastapi import HTTPException, status
 import os
 import logging
-
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ class GeminiService:
             return
 
         self.client = genai.Client(api_key=api_key)
-        self.model_name = 'gemini-2.5-flash-preview-09-2025'
+        self.model_name = 'gemini-2.5-flash-lite'  # Use the model with active quota
 
     async def generate_confession_message(
         self,
@@ -72,14 +71,18 @@ class GeminiService:
 
         for attempt in range(max_retries):
             try:
-                # The new SDK might have different async patterns.
-                # Assuming client.aio.models.generate_content for async
+                if not self.client:
+                     logger.error("Gemini Client is None. API Key likely missing.")
+                     raise ValueError("Gemini API Key is missing.")
+
+                # Use the correct async method for the Google GenAI SDK
                 response = await self.client.aio.models.generate_content(
                     model=self.model_name,
                     contents=prompt,
-                    config={
-                        'temperature': 0.7, # Slightly creative
-                        'safety_settings': [
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        max_output_tokens=500,
+                        safety_settings=[
                             types.SafetySetting(
                                 category='HARM_CATEGORY_HATE_SPEECH',
                                 threshold='BLOCK_ONLY_HIGH'
@@ -97,15 +100,22 @@ class GeminiService:
                                 threshold='BLOCK_ONLY_HIGH'
                             )
                         ]
-                    }
+                    )
                 )
-                return response.text.strip()
+
+                # Extract text from response
+                if response and response.text:
+                    return response.text.strip()
+                else:
+                    logger.warning("Empty response from Gemini API")
+                    raise ValueError("Empty response from API")
+
             except Exception as e:
+                logger.exception(f"Attempt {attempt + 1}/{max_retries} failed to generate Gemini content")
                 error_msg = str(e)
-                logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {error_msg}")
 
                 # If safety filter is triggered, do not retry - it will likely fail again
-                if "SAFETY" in error_msg.upper():
+                if "SAFETY" in error_msg.upper() or "block" in error_msg.lower():
                      logger.warning(f"Gemini safety filter triggered: {error_msg}")
                      raise HTTPException(
                          status_code=status.HTTP_400_BAD_REQUEST,
@@ -116,11 +126,11 @@ class GeminiService:
                 if attempt < max_retries - 1:
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"All {max_retries} attempts to generate content failed.")
 
-        logger.error(f"All {max_retries} attempts to generate content failed.")
-        # Fallback message
         return (
             f"Sometimes words fail to capture what's in the heart, but my feelings are real. "
-            f"I wanted to share this confession ({confess_type}) with you, {recipient_name or 'Friend'}, "
+            f"I wanted to share this confession with you, {recipient_name or 'Friend'}, "
             f"to let you know how much you mean to me and that I'm thinking of you sincerely."
         )

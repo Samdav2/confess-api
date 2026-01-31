@@ -14,7 +14,11 @@ import os
 class ConfessFormService:
     def __init__(self, session: AsyncSession):
         self.repository = ConfessFormRepository(session)
-        self.gemini_service = GeminiService(os.getenv("GEMINI_API_KEY"))
+        api_key = os.getenv("GEMINI_API_KEY")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Initializing ConfessFormService with API key starting with: {api_key[:5] if api_key else 'NONE'}")
+        self.gemini_service = GeminiService(api_key)
 
     def _generate_unique_slug(self) -> str:
         """Generate a random 8-character slug"""
@@ -77,7 +81,7 @@ class ConfessFormService:
             # Log error but don't fail the request
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"Failed to generate AI message: {e}")
+            logger.error(f"Failed to generate AI message: {e}", exc_info=True)
 
         return ConfessFormResponse(
             **created_form.model_dump(),
