@@ -5,14 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.confess_form import ConfessForm
 from app.schemas.confess_form import ConfessFormCreate, ConfessFormUpdate, ConfessFormResponse, ConfessFormListResponse
 from app.repo.confess_form import ConfessFormRepository
-from app.service.gemini_service import GeminiService
+from app.service.groq_service import GroqService
 from app.models.confess_form import ConfessForm, ConfessionAIMessage
 from fastapi import HTTPException, status, BackgroundTasks
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("GROQ_API_KEY")
 
 
 class ConfessFormService:
@@ -22,7 +22,7 @@ class ConfessFormService:
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f"Initializing ConfessFormService with API key starting with: {api_key[:5] if api_key else 'NONE'}")
-        self.gemini_service = GeminiService(api_key)
+        self.groq_service = GroqService(api_key)
 
     def _generate_unique_slug(self) -> str:
         """Generate a random 8-character slug"""
@@ -62,11 +62,13 @@ class ConfessFormService:
             **confess_data.model_dump()
         )
 
+        print("API_KEY#############: ", API_KEY)
+
         created_form = await self.repository.create(confess_form)
 
         # Generate and save AI message
         try:
-            ai_message_text = await self.gemini_service.generate_confession_message(
+            ai_message_text = await self.groq_service.generate_confession_message(
                 tone=confess_data.tone,
                 confess_type=confess_data.confess_type,
                 recipient_name=confess_data.recipient_name

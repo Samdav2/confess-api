@@ -1,22 +1,20 @@
-from google import genai
-from google.genai import types
+from groq import AsyncGroq
 from fastapi import HTTPException, status
-import os
 import logging
 import asyncio
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-class GeminiService:
+class GroqService:
     def __init__(self, api_key: str):
         if not api_key:
-            logger.warning("Gemini API key is missing")
+            logger.warning("Groq API key is missing")
             self.client = None
             return
 
-        self.client = genai.Client(api_key=api_key)
-        self.model_name = 'gemini-2.5-flash-preview-09-2025'
+        self.client = AsyncGroq(api_key=api_key)
+        # Using Llama 3.3 70B for high quality generation
+        self.model_name = 'llama-3.3-70b-versatile'
 
     async def generate_confession_message(
         self,
@@ -25,7 +23,7 @@ class GeminiService:
         recipient_name: str
     ) -> str:
         """
-        Generate a confession message using Gemini AI.
+        Generate a confession message using Groq AI.
         """
         prompt = f"""
         You are a master communicator with deep expertise in psychology, emotional intelligence, and the human condition. Your specialty is translating raw, complex human emotions into words that resonate at a soul level.
@@ -73,51 +71,37 @@ class GeminiService:
         for attempt in range(max_retries):
             try:
                 if not self.client:
-                     logger.error("Gemini Client is None. API Key likely missing.")
-                     raise ValueError("Gemini API Key is missing.")
+                     logger.error("Groq Client is None. API Key likely missing.")
+                     raise ValueError("Groq API Key is missing.")
 
-                # Use the correct async method for the Google GenAI SDK
-                response = await self.client.aio.models.generate_content(
+                response = await self.client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
                     model=self.model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.3,
-                        max_output_tokens=2000,
-                        safety_settings=[
-                            types.SafetySetting(
-                                category='HARM_CATEGORY_HATE_SPEECH',
-                                threshold='BLOCK_ONLY_HIGH'
-                            ),
-                            types.SafetySetting(
-                                category='HARM_CATEGORY_DANGEROUS_CONTENT',
-                                threshold='BLOCK_ONLY_HIGH'
-                            ),
-                            types.SafetySetting(
-                                category='HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                                threshold='BLOCK_ONLY_HIGH'
-                            ),
-                            types.SafetySetting(
-                                category='HARM_CATEGORY_HARASSMENT',
-                                threshold='BLOCK_ONLY_HIGH'
-                            )
-                        ]
-                    )
+                    temperature=0.3,
+                    max_tokens=2000,
                 )
 
-                # Extract text from response
-                if response and hasattr(response, 'text') and response.text:
-                    return response.text.strip()
+                content = response.choices[0].message.content
+
+                if content:
+                    return content.strip()
                 else:
-                    logger.warning("Empty response from Gemini API")
+                    logger.warning("Empty response from Groq API")
                     raise ValueError("Empty response from API")
 
             except Exception as e:
-                logger.exception(f"Attempt {attempt + 1}/{max_retries} failed to generate Gemini content")
+                logger.exception(f"Attempt {attempt + 1}/{max_retries} failed to generate Groq content")
                 error_msg = str(e)
 
-                # If safety filter is triggered, do not retry - it will likely fail again
-                if "SAFETY" in error_msg.upper() or "block" in error_msg.lower():
-                     logger.warning(f"Gemini safety filter triggered: {error_msg}")
+                # If safety filter is triggered (Groq content filtering), handle it?
+                # Groq raises BadRequestError for safety usually.
+                if "safety" in error_msg.lower():
+                     logger.warning(f"Groq safety filter triggered: {error_msg}")
                      raise HTTPException(
                          status_code=status.HTTP_400_BAD_REQUEST,
                          detail="The request was flagged by safety filters. Please rephrase."
@@ -129,10 +113,8 @@ class GeminiService:
                     retry_delay *= 2  # Exponential backoff
                 else:
                     logger.error(f"All {max_retries} attempts to generate content failed.")
-
-                    # # return (
-                    # #     f"Sometimes words fail to capture what's in the heart, but my feelings are real. "
-                    # #     f"I wanted to share this confession with you, {recipient_name or 'Friend'}, "
-                    # #     f"to let you know how much you mean to me and that I'm thinking of you sincerely."
-                    # # )
-                    return error_msg
+                    return (
+                        f"Sometimes words fail to capture what's in the heart, but my feelings are real. "
+                        f"I wanted to share this confession with you, {recipient_name or 'Friend'}, "
+                        f"to let you know how much you mean to me and that I'm thinking of you sincerely."
+                    )

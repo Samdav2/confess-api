@@ -25,6 +25,7 @@ packages = [
     "google-auth",
     "cachetools",
     "google-genai"
+    "groq"
 ]
 
 def install(package):

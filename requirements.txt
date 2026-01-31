@@ -18,3 +18,4 @@ slowapi
 email-validator
 httpx
 google-genai
+groq
