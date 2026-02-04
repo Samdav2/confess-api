@@ -110,7 +110,7 @@ async def get_user_confess_forms(
         page: int = Query(default=1, ge=1, description="Page number"),
         page_size: int = Query(default=10, ge=1, le=100, description="Items per page"),
         confess_type: Optional[str] = Query(default=None, description="Filter by confess type"),
-        # current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
