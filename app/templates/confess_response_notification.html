@@ -1,43 +1,57 @@
 {% extends "email_base.html" %}
 
 {% block content %}
-<h2 style="margin-top: 0; color: #111;">Confession Response Update</h2>
+<h2 style="margin-top: 0; color: #111; font-weight: 700;">Confession Response Update</h2>
 
 <p>Hello <strong>{{ name }}</strong>,</p>
 
 <p>You have received a response to your confession for <strong>{{ recipient_name }}</strong>.</p>
 
 <div style="
-    padding: 24px;
+    padding: 32px 24px;
     border-radius: 8px;
-    margin: 24px 0;
+    margin: 32px 0;
     text-align: center;
     {% if is_accepted %}
-        background-color: #ecfdf5;
-        border: 1px solid #10b981;
+        background-color: #f0fdf4;
+        border: 1px solid #16a34a;
     {% else %}
         background-color: #fef2f2;
-        border: 1px solid #ef4444;
+        border: 1px solid #dc2626;
     {% endif %}
 ">
     <p
-        style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: {% if is_accepted %}#047857{% else %}#b91c1c{% endif %};">
+        style="margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; color: {% if is_accepted %}#15803d{% else %}#b91c1c{% endif %};">
         Response Status
     </p>
     <h1 style="
-        margin: 10px 0 0;
-        font-size: 32px;
-        color: {% if is_accepted %}#059669{% else %}#dc2626{% endif %};
+        margin: 12px 0 0;
+        font-size: 36px;
+        font-weight: 800;
+        color: {% if is_accepted %}#16a34a{% else %}#dc2626{% endif %};
     ">
         {{ response }}
     </h1>
 </div>
 
-<p>
-    <strong>Confession Type:</strong> {{ confess_type }}
-</p>
+<div style="background-color: #fafafa; padding: 20px; border-radius: 6px; border-left: 4px solid #000;">
+    <p style="margin: 0; color: #666; font-size: 14px;"><strong>Confession Type:</strong> {{ confess_type }}</p>
+    <!-- Add more details if needed, e.g. proposed date -->
+</div>
 
-<p style="margin-top: 20px;">
-    Keep the momentum going!
+{% if not is_accepted and proposed_date %}
+<p style="margin-top: 20px; color: #dc2626;">
+    A new date has been proposed: <strong>{{ proposed_date }}</strong>
+</p>
+{% endif %}
+
+<p style="margin-top: 30px;">
+    {% if is_accepted %}
+    <span
+        style="display: inline-block; padding: 8px 16px; background-color: #dc2626; color: #fff; border-radius: 4px; font-size: 14px;">Great
+        news! Keep the momentum going!</span>
+    {% else %}
+    Keep your head up! There are plenty more opportunities.
+    {% endif %}
 </p>
 {% endblock %}
