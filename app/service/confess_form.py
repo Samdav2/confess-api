@@ -251,7 +251,8 @@ class ConfessFormService:
             self,
             slug: str,
             answer: bool,
-            background_tasks: BackgroundTasks
+            background_tasks: BackgroundTasks,
+            date_proposal: Optional[datetime] = None
     ) -> dict:
         """Submit an answer to a confess form"""
         confess_form = await self.repository.get_by_slug(slug)
@@ -262,31 +263,43 @@ class ConfessFormService:
             )
 
         # Update database
-        updated_form = await self.repository.update(confess_form.id, {"date_answer": answer})
+        update_data = {"date_answer": answer}
+        if date_proposal:
+            update_data["recipient_date_proposal"] = date_proposal
+
+        updated_form = await self.repository.update(confess_form.id, update_data)
 
         # Send Notification to the Sender (User)
         # Verify we have the user email
         sender_email = confess_form.user.email
         sender_name = confess_form.sender_name or "Anonymous" # Or user.username if appropriate
 
-        # If user is loaded, we can use their name if sender_name is not set?
-        # But sender_name is the name used in the confession.
-        # Let's use sender_name from form, or fallback to "User".
-
         from app.dependencies.email_service import email_service
 
         if sender_email:
-             email_service.send_confess_response_notification(
-                background_tasks=background_tasks,
-                email_to=sender_email,
-                sender_name=sender_name,
-                recipient_name=confess_form.recipient_name or "The Recipient",
-                response=answer,
-                confess_type=confess_form.confess_type,
-                slug=slug
-            )
+             # If a new date is proposed, send a reschedule notification
+             if date_proposal:
+                 email_service.send_confess_reschedule_notification(
+                    background_tasks=background_tasks,
+                    email_to=sender_email,
+                    sender_name=sender_name,
+                    recipient_name=confess_form.recipient_name or "The Recipient",
+                    new_date=date_proposal,
+                    confess_type=confess_form.confess_type,
+                    slug=slug
+                )
+             else:
+                 email_service.send_confess_response_notification(
+                    background_tasks=background_tasks,
+                    email_to=sender_email,
+                    sender_name=sender_name,
+                    recipient_name=confess_form.recipient_name or "The Recipient",
+                    response=answer,
+                    confess_type=confess_form.confess_type,
+                    slug=slug
+                )
 
-        return {"message": "Answer submitted successfully", "answer": answer}
+        return {"message": "Answer submitted successfully", "answer": answer, "date_proposal": date_proposal}
 
     async def send_confess_form(
             self,

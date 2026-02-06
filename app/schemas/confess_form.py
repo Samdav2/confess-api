@@ -89,6 +89,7 @@ class ConfessFormResponse(BaseModel):
     date_value: Optional[datetime] = None
     date_answer: Optional[bool] = None
     date_tpe: Optional[List[str]] = None
+    recipient_date_proposal: Optional[datetime] = None
     ai_message: Optional[str] = None
     slug: Optional[str]
     created_at: datetime
@@ -107,3 +108,4 @@ class ConfessFormListResponse(BaseModel):
 
 class ConfessFormAnswer(BaseModel):
     date_answer: bool
+    date_proposal: Optional[datetime] = None

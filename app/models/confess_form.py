@@ -47,6 +47,7 @@ class ConfessForm(SQLModel, table=True):
     date_value: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
     date_answer: Optional[bool] = Field(default=None, nullable=True)
     date_tpe: Optional[List[str]] = Field(default=None, sa_column=Column(JSON, nullable=True))
+    recipient_date_proposal: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
     paid: bool = Field(default=True, nullable=True)
     slug: str = Field(nullable=True, index=True)
     created_at: datetime = Field(

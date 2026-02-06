@@ -6,6 +6,7 @@ from typing import Dict, Any
 import logging
 from pathlib import Path
 import jinja2
+from datetime import datetime
 from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -459,6 +460,39 @@ class EmailService:
                 "is_accepted": response
             },
             template_name="confess_response_notification.html"
+        )
+
+    @staticmethod
+    def send_confess_reschedule_notification(
+            background_tasks: BackgroundTasks,
+            email_to: str,
+            sender_name: str,
+            recipient_name: str,
+            new_date: datetime,
+            confess_type: str,
+            slug: str
+    ) -> None:
+        """
+        Send email notification for a confession reschedule proposal.
+        """
+        subject_line = f"{recipient_name} has proposed a new date for ({confess_type})"
+
+        # Format date for display
+        friendly_date = new_date.strftime("%B %d, %Y at %I:%M %p")
+
+        EmailService._add_task(
+            background_tasks=background_tasks,
+            subject=subject_line,
+            email_to=email_to,
+            template_body={
+                "name": sender_name,
+                "recipient_name": recipient_name,
+                "new_date": friendly_date,
+                "confess_type": confess_type,
+                "slug": slug,
+                "project_name": settings.PROJECT_NAME
+            },
+            template_name="confess_reschedule_notification.html"
         )
 
 email_service = EmailService()

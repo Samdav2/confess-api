@@ -86,8 +86,14 @@ async def submit_confess_answer(
 
     - **slug**: The unique slug of the confess form
     - **date_answer**: The response boolean (True for Yes/Accepted, False for No/Declined)
+    - **date_proposal**: Optional new date proposed by the recipient
     """
-    return await service.submit_answer(slug, answer_data.date_answer, background_tasks)
+    return await service.submit_answer(
+        slug,
+        answer_data.date_answer,
+        background_tasks,
+        date_proposal=answer_data.date_proposal
+    )
 
 
 @router.get(
