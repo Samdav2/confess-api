@@ -9,7 +9,8 @@ from app.schemas.confess_form import (
     ConfessFormCreate,
     ConfessFormUpdate,
     ConfessFormResponse,
-    ConfessFormListResponse
+    ConfessFormListResponse,
+    ConfessFormAnswer
 )
 from app.service.confess_form import ConfessFormService
 
@@ -44,6 +45,9 @@ async def create_confess_form(
     - **email**: Email address (required if delivery is email)
     - **phone**: Phone number (required if delivery is whatsapp)
     - **name**: Recipient name (optional)
+    - **date_value**: Date of the event (optional)
+    - **date_answer**: Yes/No answer (optional)
+    - **date_tpe**: Array of options (optional)
     """
     return await service.create_confess_form(current_user.id, confess_data)
 
@@ -64,6 +68,26 @@ async def send_confess_form(
     - **slug**: The unique slug of the confess form
     """
     return await service.send_confess_form(slug, background_tasks)
+
+
+@router.post(
+    "/{slug}/answer",
+    status_code=status.HTTP_200_OK,
+    summary="Submit answer to confess form"
+)
+async def submit_confess_answer(
+        slug: str,
+        answer_data: ConfessFormAnswer,
+        background_tasks: BackgroundTasks,
+        service: ConfessFormService = Depends(get_confess_service)
+):
+    """
+    Submit an answer to a confess form and notify the sender.
+
+    - **slug**: The unique slug of the confess form
+    - **date_answer**: The response boolean (True for Yes/Accepted, False for No/Declined)
+    """
+    return await service.submit_answer(slug, answer_data.date_answer, background_tasks)
 
 
 @router.get(

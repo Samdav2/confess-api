@@ -25,7 +25,8 @@ class ConfessFormRepository:
 
     async def get_by_slug(self, slug: str) -> Optional[ConfessForm]:
         """Get confess form by slug"""
-        statement = select(ConfessForm).where(ConfessForm.slug == slug)
+        from sqlalchemy.orm import selectinload
+        statement = select(ConfessForm).where(ConfessForm.slug == slug).options(selectinload(ConfessForm.user))
         result = await self.session.exec(statement)
         return result.first()
 

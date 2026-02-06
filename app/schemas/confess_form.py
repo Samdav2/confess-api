@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, validator
 from uuid import UUID
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 
 
@@ -28,6 +28,10 @@ class ConfessFormCreate(BaseModel):
 
     sender_name: Optional[str] = Field(None, max_length=100)
     recipient_name: Optional[str] = Field(None, max_length=100)
+
+    date_value: Optional[datetime] = None
+    date_answer: Optional[bool] = None
+    date_tpe: Optional[List[str]] = None
 
     @validator('email')
     def validate_email_delivery(cls, v, values):
@@ -62,6 +66,12 @@ class ConfessFormUpdate(BaseModel):
     recipient_name: Optional[str] = Field(None, max_length=100)
 
 
+
+    date_value: Optional[datetime] = None
+    date_answer: Optional[bool] = None
+    date_tpe: Optional[List[str]] = None
+
+
 class ConfessFormResponse(BaseModel):
     id: UUID
     user_id: UUID
@@ -76,6 +86,9 @@ class ConfessFormResponse(BaseModel):
 
     sender_name: Optional[str]
     recipient_name: Optional[str]
+    date_value: Optional[datetime] = None
+    date_answer: Optional[bool] = None
+    date_tpe: Optional[List[str]] = None
     ai_message: Optional[str] = None
     slug: Optional[str]
     created_at: datetime
@@ -90,3 +103,7 @@ class ConfessFormListResponse(BaseModel):
     page: int
     page_size: int
     items: list[ConfessFormResponse]
+
+
+class ConfessFormAnswer(BaseModel):
+    date_answer: bool

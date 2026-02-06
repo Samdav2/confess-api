@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from typing import Optional
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, JSON
+from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 from uuid import UUID, uuid4
 from enum import Enum
@@ -43,6 +43,10 @@ class ConfessForm(SQLModel, table=True):
 
     sender_name: Optional[str] = Field(default=None, nullable=True)
     recipient_name: Optional[str] = Field(default=None, nullable=True)
+
+    date_value: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+    date_answer: Optional[bool] = Field(default=None, nullable=True)
+    date_tpe: Optional[List[str]] = Field(default=None, sa_column=Column(JSON, nullable=True))
     paid: bool = Field(default=True, nullable=True)
     slug: str = Field(nullable=True, index=True)
     created_at: datetime = Field(

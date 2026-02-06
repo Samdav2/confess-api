@@ -247,6 +247,47 @@ class ConfessFormService:
 
         await self.repository.delete(confess_id)
 
+    async def submit_answer(
+            self,
+            slug: str,
+            answer: bool,
+            background_tasks: BackgroundTasks
+    ) -> dict:
+        """Submit an answer to a confess form"""
+        confess_form = await self.repository.get_by_slug(slug)
+        if not confess_form:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Confess form not found"
+            )
+
+        # Update database
+        updated_form = await self.repository.update(confess_form.id, {"date_answer": answer})
+
+        # Send Notification to the Sender (User)
+        # Verify we have the user email
+        sender_email = confess_form.user.email
+        sender_name = confess_form.sender_name or "Anonymous" # Or user.username if appropriate
+
+        # If user is loaded, we can use their name if sender_name is not set?
+        # But sender_name is the name used in the confession.
+        # Let's use sender_name from form, or fallback to "User".
+
+        from app.dependencies.email_service import email_service
+
+        if sender_email:
+             email_service.send_confess_response_notification(
+                background_tasks=background_tasks,
+                email_to=sender_email,
+                sender_name=sender_name,
+                recipient_name=confess_form.recipient_name or "The Recipient",
+                response=answer,
+                confess_type=confess_form.confess_type,
+                slug=slug
+            )
+
+        return {"message": "Answer submitted successfully", "answer": answer}
+
     async def send_confess_form(
             self,
             slug: str,

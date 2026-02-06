@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Confession Response</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Hello {{ name }},</h2>
+
+        <p>You have a new response to your confession!</p>
+
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>{{ recipient_name }}</strong> has responded:</p>
+            <h3 style="color: {% if is_accepted %}#2ecc71{% else %}#e74c3c{% endif %};">
+                {{ response }}
+            </h3>
+        </div>
+
+        <p>Confession Type: {{ confess_type }}</p>
+
+        <p>Best regards,<br>{{ project_name }} Team</p>
+    </div>
+</body>
+
+</html>
