@@ -25,6 +25,7 @@ class ConfessFormCreate(BaseModel):
     delivery: DeliveryMethod = Field(default=DeliveryMethod.EMAIL)
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    allow_recipient_to_choose: bool = Field(default=False)
 
     sender_name: Optional[str] = Field(None, max_length=100)
     recipient_name: Optional[str] = Field(None, max_length=100)
@@ -61,6 +62,7 @@ class ConfessFormUpdate(BaseModel):
     delivery: Optional[DeliveryMethod] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    allow_recipient_to_choose: Optional[bool] = None
 
     sender_name: Optional[str] = Field(None, max_length=100)
     recipient_name: Optional[str] = Field(None, max_length=100)
@@ -83,6 +85,7 @@ class ConfessFormResponse(BaseModel):
     delivery: DeliveryMethod
     email: Optional[str]
     phone: Optional[str]
+    allow_recipient_to_choose: Optional[bool] = False
 
     sender_name: Optional[str]
     recipient_name: Optional[str]

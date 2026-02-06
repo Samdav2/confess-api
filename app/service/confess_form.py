@@ -265,6 +265,11 @@ class ConfessFormService:
         # Update database
         update_data = {"date_answer": answer}
         if date_proposal:
+            if not confess_form.allow_recipient_to_choose:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Recipient is not allowed to propose a new date"
+                )
             update_data["recipient_date_proposal"] = date_proposal
 
         updated_form = await self.repository.update(confess_form.id, update_data)

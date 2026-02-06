@@ -40,6 +40,7 @@ class ConfessForm(SQLModel, table=True):
     delivery: DeliveryMethod = Field(nullable=False, default=DeliveryMethod.EMAIL, index=True)
     email: str = Field(nullable=True, index=True)
     phone: str = Field(nullable=True, index=True)
+    allow_recipient_to_choose: bool = Field(nullable=False, default=False)
 
     sender_name: Optional[str] = Field(default=None, nullable=True)
     recipient_name: Optional[str] = Field(default=None, nullable=True)
