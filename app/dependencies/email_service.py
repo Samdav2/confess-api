@@ -495,4 +495,33 @@ class EmailService:
             template_name="confess_reschedule_notification.html"
         )
 
+    @staticmethod
+    def send_confess_viewed_notification(
+            background_tasks: BackgroundTasks,
+            email_to: str,
+            sender_name: str,
+            recipient_name: str,
+            confess_type: str,
+            slug: str
+    ) -> None:
+        """
+        Send email notification when a confession is viewed.
+        """
+        subject_line = f"Someone viewed your confession ({confess_type})"
+
+        EmailService._add_task(
+            background_tasks=background_tasks,
+            subject=subject_line,
+            email_to=email_to,
+            template_body={
+                "name": sender_name,
+                "recipient_name": recipient_name,
+                "confess_type": confess_type,
+                "slug": slug,
+                "project_name": settings.PROJECT_NAME,
+                "project_url": settings.FRONTEND_URL
+            },
+            template_name="confess_viewed_notification.html"
+        )
+
 email_service = EmailService()

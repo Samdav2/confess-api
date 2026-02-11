@@ -24,6 +24,7 @@ def verify_templates():
         ("ticket_created.html", {"title": "Ticket Created", "name": "John Doe", "ticket_id": "12345", "subject": "Issue with payment", "message_preview": "I cannot pay..."}),
         ("ticket_reply_admin.html", {"title": "Admin Reply", "name": "John Doe", "ticket_id": "12345", "reply_message": "We fixed it.", "site_url": "http://example.com"}),
         ("ticket_reply_user.html", {"title": "User Reply", "name": "John Doe", "ticket_id": "12345", "reply_message": "Thanks!"}),
+        ("confess_viewed_notification.html", {"name": "Sender Name", "recipient_name": "Recipient Name", "confess_type": "love_letter", "slug": "abcdef12", "project_url": "https://confess.com.ng"}),
     ]
 
     for template_name, context in test_cases:

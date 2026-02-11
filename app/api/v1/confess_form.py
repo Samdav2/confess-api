@@ -104,13 +104,14 @@ async def submit_confess_answer(
 )
 async def get_confess_form_by_slug(
         slug: str,
+        background_tasks: BackgroundTasks,
         service: ConfessFormService = Depends(get_confess_service)
 ):
     """
     Get a confess form by its unique slug.
     This endpoint is public.
     """
-    return await service.get_confess_form_by_slug(slug)
+    return await service.get_confess_form_by_slug(slug, background_tasks)
 
 
 @router.get(

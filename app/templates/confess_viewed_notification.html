@@ -1,0 +1,72 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<h2 style="margin-top: 0; color: #111; font-weight: 700; text-align: center;">🎉 Your Confession Was Viewed!</h2>
+
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<p>We've got exciting news for you!</p>
+
+<div style="
+    padding: 32px 24px;
+    border-radius: 12px;
+    margin: 32px 0;
+    text-align: center;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #f59e0b;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+">
+    <p style="margin: 0; font-size: 48px;">👀</p>
+    <p
+        style="margin: 12px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; color: #92400e;">
+        Status Update
+    </p>
+    <h1 style="
+        margin: 8px 0 0;
+        font-size: 28px;
+        font-weight: 800;
+        color: #b45309;
+    ">
+        {{ recipient_name }} Opened Your Confession!
+    </h1>
+</div>
+
+<p style="font-size: 16px; line-height: 1.7; color: #333;">
+    <strong>{{ recipient_name }}</strong> has just opened the link to your confession.
+    This means they're reading your heartfelt message right now! 💬
+</p>
+
+<div
+    style="background-color: #fafafa; padding: 20px; border-radius: 8px; border-left: 5px solid #dc2626; margin: 24px 0;">
+    <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Confession
+        Type</p>
+    <p style="margin: 0; color: #111; font-size: 18px; font-weight: 600;">{{ confess_type|replace('_', ' ')|title }}</p>
+</div>
+
+<p style="font-size: 15px; line-height: 1.7; color: #555;">
+    They haven't responded yet, but the fact that they opened it is a <strong>great sign</strong>!
+    We'll notify you immediately once they make a decision.
+</p>
+
+<div style="text-align: center; margin: 36px 0 20px;">
+    <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Keep the excitement going!</p>
+    <a href="{{ project_url }}/confess/{{ slug }}" style="
+        display: inline-block;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: #ffffff !important;
+        padding: 16px 40px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 16px;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+        transition: transform 0.2s;
+    ">View Your Confession</a>
+</div>
+
+<div style="text-align: center; margin-top: 32px; padding: 20px; background-color: #f0f9ff; border-radius: 8px;">
+    <p style="margin: 0; font-size: 14px; color: #0369a1;">
+        💡 <strong>Tip:</strong> Patience is key! Great things take time.
+    </p>
+</div>
+{% endblock %}

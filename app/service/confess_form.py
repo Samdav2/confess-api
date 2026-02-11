@@ -126,7 +126,8 @@ class ConfessFormService:
 
     async def get_confess_form_by_slug(
             self,
-            slug: str
+            slug: str,
+            background_tasks: Optional[BackgroundTasks] = None
     ) -> ConfessFormResponse:
         """Get a confess form by slug"""
         confess_form = await self.repository.get_by_slug(slug)
@@ -136,6 +137,18 @@ class ConfessFormService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Confess form not found"
             )
+
+        # Send notification to sender that the form has been viewed
+        if background_tasks and confess_form.user.email:
+             from app.dependencies.email_service import email_service
+             email_service.send_confess_viewed_notification(
+                background_tasks=background_tasks,
+                email_to=confess_form.user.email,
+                sender_name=confess_form.sender_name or "Anonymous",
+                recipient_name=confess_form.recipient_name or "The Recipient",
+                confess_type=confess_form.confess_type,
+                slug=slug
+             )
 
         return ConfessFormResponse(
             **confess_form.model_dump(),
@@ -348,14 +361,16 @@ class ConfessFormService:
             return {"message": "Notification sent via Email"}
 
         elif not confess_form.email and confess_form.phone:
-            # Send WhatsApp
-            # TODO: Implement actual WhatsApp integration
-            # For now, we log it as a placeholder
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info(f"Mocking WhatsApp send to {confess_form.phone}: {confess_form.message}")
+            # Send SMS via Kudi API
+            from app.service.kudi_sms_service import kudi_sms_service
 
-            return {"message": "Notification sent via WhatsApp (Mock)"}
+            # Message limit for SMS might be an issue, but sending full message for now
+            sms_message = f"Confession from {confess_form.sender_name or 'Someone'}: {confess_form.message}\n\nView details: https://confess.com.ng/confess/{slug}"
+
+            # Using background tasks for SMS sending to avoid blocking
+            background_tasks.add_task(kudi_sms_service.send_sms, to=confess_form.phone, message=sms_message)
+
+            return {"message": "Notification sent via SMS (Kudi)"}
 
         else:
             # Both exist, default to Email (or whatever priority logic implies)

@@ -61,6 +61,16 @@ class Settings(BaseSettings):
     MAILJET_SECRET_KEY: str = os.getenv("MAILJET_SECRET_KEY", "")
     MAILJET_SENDER_NAME: str = "Confess Team"
 
+    # MTN SMS Settings
+    MTN_CLIENT_ID: str = os.getenv("MTN_CLIENT_ID", "")
+    MTN_CLIENT_SECRET: str = os.getenv("MTN_CLIENT_SECRET", "")
+    MTN_API_BASE_URL: str = os.getenv("MTN_API_BASE_URL", "https://api.mtn.com")
+    MTN_SENDER_ID: str = os.getenv("MTN_SENDER_ID", "CONFESS")
+
+    # Kudi SMS Settings
+    KUDI_API_KEY: str = os.getenv("KUDI_API_KEY", "")
+    KUDI_SENDER_ID: str = os.getenv("KUDI_SENDER_ID", "CONFESS")
+
 
 
     class Config:
