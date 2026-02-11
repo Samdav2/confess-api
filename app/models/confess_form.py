@@ -13,7 +13,8 @@ class ConfessType(str, Enum):
 
 class DeliveryMethod(str, Enum):
     EMAIL = "email"
-    WHATSAPP = "whatsapp"
+    PHONE = "phone"
+
 
 
 class ConfessionAIMessage(SQLModel, table=True):
