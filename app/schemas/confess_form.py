@@ -46,11 +46,11 @@ class ConfessFormCreate(BaseModel):
             raise ValueError('Phone is required when delivery method is PHONE')
         return v
 
-    @validator('phone')
-    def validate_phone(cls, v):
-        if v and not v.startswith('+'):
-            raise ValueError('Phone number must include country code (e.g., +234...)')
-        return v
+    # @validator('phone')
+    # def validate_phone(cls, v):
+    #     if v and not v.startswith('+'):
+    #         raise ValueError('Phone number must include country code (e.g., +234...)')
+    #     return v
 
 
 class ConfessFormUpdate(BaseModel):

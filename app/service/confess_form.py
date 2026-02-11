@@ -146,7 +146,7 @@ class ConfessFormService:
                 email_to=confess_form.user.email,
                 sender_name=confess_form.sender_name or "Anonymous",
                 recipient_name=confess_form.recipient_name or "The Recipient",
-                confess_type=confess_form.confess_type,
+                confess_type=confess_form.confess_type.value,
                 slug=slug
              )
 
@@ -303,7 +303,7 @@ class ConfessFormService:
                     sender_name=sender_name,
                     recipient_name=confess_form.recipient_name or "The Recipient",
                     new_date=date_proposal,
-                    confess_type=confess_form.confess_type,
+                    confess_type=confess_form.confess_type.value,
                     slug=slug
                 )
              else:
@@ -313,7 +313,7 @@ class ConfessFormService:
                     sender_name=sender_name,
                     recipient_name=confess_form.recipient_name or "The Recipient",
                     response=answer,
-                    confess_type=confess_form.confess_type,
+                    confess_type=confess_form.confess_type.value,
                     slug=slug
                 )
 
@@ -355,7 +355,7 @@ class ConfessFormService:
                 name=confess_form.recipient_name or "Friend",
                 sender_name=confess_form.sender_name or "Someone", # You might want to get this from user_id if not anonymous
                 message=confess_form.message,
-                confess_type=confess_form.confess_type,
+                confess_type=confess_form.confess_type.value,
                 slug=slug
             )
             return {"message": "Notification sent via Email"}
@@ -380,7 +380,7 @@ class ConfessFormService:
                 name=confess_form.recipient_name or "Friend",
                 sender_name=confess_form.sender_name or "Someone",
                 message=confess_form.message,
-                confess_type=confess_form.confess_type,
+                confess_type=confess_form.confess_type.value,
                 slug=slug
             )
              return {"message": "Notification sent via Email"}
