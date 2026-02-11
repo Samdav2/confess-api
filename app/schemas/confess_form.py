@@ -13,7 +13,7 @@ class ConfessType(str, Enum):
 
 class DeliveryMethod(str, Enum):
     EMAIL = "email"
-    WHATSAPP = "whatsapp"
+    PHONE = "phone"
 
 
 class ConfessFormCreate(BaseModel):
@@ -42,8 +42,8 @@ class ConfessFormCreate(BaseModel):
 
     @validator('phone')
     def validate_phone_delivery(cls, v, values):
-        if values.get('delivery') == DeliveryMethod.WHATSAPP and not v:
-            raise ValueError('Phone is required when delivery method is WHATSAPP')
+        if values.get('delivery') == DeliveryMethod.PHONE and not v:
+            raise ValueError('Phone is required when delivery method is PHONE')
         return v
 
     @validator('phone')
