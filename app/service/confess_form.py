@@ -2,7 +2,7 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.confess_form import ConfessForm
+from app.models.confess_form import ConfessForm, DeliveryMethod
 from app.schemas.confess_form import ConfessFormCreate, ConfessFormUpdate, ConfessFormResponse, ConfessFormListResponse
 from app.repo.confess_form import ConfessFormRepository
 from app.service.groq_service import GroqService
@@ -34,20 +34,21 @@ class ConfessFormService:
     async def create_confess_form(
             self,
             user_id: UUID,
-            confess_data: ConfessFormCreate
+            confess_data: ConfessFormCreate,
+            background_tasks: BackgroundTasks
     ) -> ConfessFormResponse:
         """Create a new confess form"""
         # Validate delivery method requirements
-        if confess_data.delivery == "email" and not confess_data.email:
+        if confess_data.delivery == DeliveryMethod.EMAIL and not confess_data.email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email is required when delivery method is EMAIL"
             )
 
-        if confess_data.delivery == "whatsapp" and not confess_data.phone:
+        if confess_data.delivery == DeliveryMethod.PHONE and not confess_data.phone:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number is required when delivery method is WHATSAPP"
+                detail="Phone number is required when delivery method is PHONE"
             )
 
         # Generate unique slug
@@ -89,6 +90,14 @@ class ConfessFormService:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to generate AI message: {e}", exc_info=True)
+
+        # Trigger notification immediately
+        try:
+            await self.send_confess_form(slug, background_tasks)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send initial notification: {e}", exc_info=True)
 
         # Try to use the direct generated text first for the response
         final_ai_message = ai_message_text if 'ai_message_text' in locals() else (created_form.ai_message.message if created_form.ai_message else None)
@@ -221,15 +230,15 @@ class ConfessFormService:
 
         # Validate delivery method if being updated
         if 'delivery' in update_dict:
-            if update_dict['delivery'] == "email" and not (update_dict.get('email') or confess_form.email):
+            if update_dict['delivery'] == DeliveryMethod.EMAIL and not (update_dict.get('email') or confess_form.email):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Email is required when delivery method is EMAIL"
                 )
-            if update_dict['delivery'] == "whatsapp" and not (update_dict.get('phone') or confess_form.phone):
+            if update_dict['delivery'] == DeliveryMethod.PHONE and not (update_dict.get('phone') or confess_form.phone):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Phone number is required when delivery method is WHATSAPP"
+                    detail="Phone number is required when delivery method is PHONE"
                 )
 
         updated_form = await self.repository.update(confess_id, update_dict)
@@ -337,14 +346,34 @@ class ConfessFormService:
         from app.dependencies.email_service import email_service
 
         # Logic:
-        # 1. If phone is null -> Send Email
-        # 2. If email is null and phone is not null -> Send WhatsApp
-        # 3. Default fallback (if both exist, priority to Email as per "phone is null" check) -> Email
+        # Use explicit DeliveryMethod check
 
-        if not confess_form.phone:
+        if confess_form.delivery == DeliveryMethod.PHONE:
+             # Send SMS via Kudi API
+            if not confess_form.phone:
+                 raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No phone number available for this form"
+                )
+
+            from app.service.kudi_sms_service import kudi_sms_service
+
+            # Construct Kudi-compliant message
+            # Avoid words like "verify", "code", etc that might trigger spam filters
+            recipient_name = confess_form.recipient_name or "Friend"
+            sender_name = confess_form.sender_name or "Someone"
+
+            sms_message = f"Hello {recipient_name}, you have a confession from {sender_name}. View it here: https://confess.com.ng/{slug}"
+
+            # Using background tasks for SMS sending to avoid blocking
+            background_tasks.add_task(kudi_sms_service.send_sms, to=confess_form.phone, message=sms_message)
+
+            return {"message": "Notification sent via SMS (Kudi)"}
+
+        elif confess_form.delivery == DeliveryMethod.EMAIL:
             # Send Email
             if not confess_form.email:
-                raise HTTPException(
+                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="No email address available for this form"
                 )
@@ -353,34 +382,14 @@ class ConfessFormService:
                 background_tasks=background_tasks,
                 email_to=confess_form.email,
                 name=confess_form.recipient_name or "Friend",
-                sender_name=confess_form.sender_name or "Someone", # You might want to get this from user_id if not anonymous
+                sender_name=confess_form.sender_name or "Someone",
                 message=confess_form.message,
                 confess_type=confess_form.confess_type.value,
                 slug=slug
             )
             return {"message": "Notification sent via Email"}
 
-        elif not confess_form.email and confess_form.phone:
-            # Send SMS via Kudi API
-            from app.service.kudi_sms_service import kudi_sms_service
-
-            # Message limit for SMS might be an issue, but sending full message for now
-            sms_message = f"Confession from {confess_form.sender_name or 'Someone'}: {confess_form.message}\n\nView details: https://confess.com.ng/confess/{slug}"
-
-            # Using background tasks for SMS sending to avoid blocking
-            background_tasks.add_task(kudi_sms_service.send_sms, to=confess_form.phone, message=sms_message)
-
-            return {"message": "Notification sent via SMS (Kudi)"}
-
         else:
-            # Both exist, default to Email (or whatever priority logic implies)
-             email_service.send_confess_notification(
-                background_tasks=background_tasks,
-                email_to=confess_form.email,
-                name=confess_form.recipient_name or "Friend",
-                sender_name=confess_form.sender_name or "Someone",
-                message=confess_form.message,
-                confess_type=confess_form.confess_type.value,
-                slug=slug
-            )
-             return {"message": "Notification sent via Email"}
+            # Fallback or default behavior if delivery method is somehow not set to one of the above
+             # This should theoretically not happen if validation works
+             return {"message": "No valid delivery method found"}

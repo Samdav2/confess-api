@@ -30,6 +30,7 @@ async def get_confess_service(session: AsyncSession = Depends(get_session)) -> C
 )
 async def create_confess_form(
         confess_data: ConfessFormCreate,
+        background_tasks: BackgroundTasks,
         current_user: User = Depends(get_current_user),
         service: ConfessFormService = Depends(get_confess_service)
 ):
@@ -49,7 +50,7 @@ async def create_confess_form(
     - **date_answer**: Yes/No answer (optional)
     - **date_tpe**: Array of options (optional)
     """
-    return await service.create_confess_form(current_user.id, confess_data)
+    return await service.create_confess_form(current_user.id, confess_data, background_tasks)
 
 
 @router.post(
