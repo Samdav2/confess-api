@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     KUDI_API_KEY: str = os.getenv("KUDI_API_KEY", "")
     KUDI_SENDER_ID: str = os.getenv("KUDI_SENDER_ID", "CONFESS")
 
+    # Paystack Settings
+    PAYSTACK_SECRET_KEY: str = os.getenv("PAYSTACK_SECRET_KEY", "")
+    PAYSTACK_PUBLIC_KEY: str = os.getenv("PAYSTACK_PUBLIC_KEY", "")
+
 
 
     class Config:

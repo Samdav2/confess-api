@@ -328,6 +328,63 @@ class ConfessFormService:
 
         return {"message": "Answer submitted successfully", "answer": answer, "date_proposal": date_proposal}
 
+    async def get_user_paid_forms(
+            self,
+            user_id: UUID,
+            page: int = 1,
+            page_size: int = 10
+    ) -> ConfessFormListResponse:
+        """Get all paid confess forms for a user"""
+        if page < 1:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page must be greater than 0")
+        if page_size < 1 or page_size > 100:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 100")
+
+        skip = (page - 1) * page_size
+        confess_forms, total = await self.repository.get_paid_by_user_id(
+            user_id=user_id,
+            skip=skip,
+            limit=page_size
+        )
+
+        return ConfessFormListResponse(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[
+                ConfessFormResponse(
+                    **cf.model_dump(),
+                    ai_message=cf.ai_message.message if cf.ai_message else None
+                ) for cf in confess_forms
+            ]
+        )
+
+    async def initialize_paid_form_payment(
+            self,
+            confess_id: UUID,
+            user_id: UUID,
+            email: str,
+            amount: float,
+            callback_url: Optional[str] = None
+    ):
+        """Initialize payment for a specific confess form"""
+        confess_form = await self.repository.get_by_id(confess_id)
+        if not confess_form:
+            raise HTTPException(status_code=404, detail="Confess form not found")
+
+        if confess_form.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized to pay for this form")
+
+        from app.service.paystack_service import paystack_service
+        return await paystack_service.initialize_transaction(
+            session=self.repository.session,
+            user_id=user_id,
+            email=email,
+            amount=amount,
+            callback_url=callback_url,
+            confess_form_id=confess_id
+        )
+
     async def send_confess_form(
             self,
             slug: str,

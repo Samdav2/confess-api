@@ -114,6 +114,47 @@ class ConfessFormRepository:
         await self.session.commit()
         return True
 
+    async def get_paid_by_user_id(
+            self,
+            user_id: UUID,
+            skip: int = 0,
+            limit: int = 10
+    ) -> tuple[List[ConfessForm], int]:
+        """Get all paid confess forms for a user"""
+        statement = select(ConfessForm).where(ConfessForm.user_id == user_id).where(ConfessForm.paid == True)
+
+        # Get total count
+        count_statement = select(ConfessForm).where(ConfessForm.user_id == user_id).where(ConfessForm.paid == True)
+        count_result = await self.session.exec(count_statement)
+        total = len(count_result.all())
+
+        # Get paginated results
+        statement = statement.order_by(ConfessForm.created_at.desc()).offset(skip).limit(limit)
+        result = await self.session.exec(statement)
+        results = result.all()
+
+        return results, total
+
+    async def get_all_paid(
+            self,
+            skip: int = 0,
+            limit: int = 10
+    ) -> tuple[List[ConfessForm], int]:
+        """Get all paid confess forms"""
+        statement = select(ConfessForm).where(ConfessForm.paid == True)
+
+        # Get total count
+        count_statement = select(ConfessForm).where(ConfessForm.paid == True)
+        count_result = await self.session.exec(count_statement)
+        total = len(count_result.all())
+
+        # Get paginated results
+        statement = statement.order_by(ConfessForm.created_at.desc()).offset(skip).limit(limit)
+        result = await self.session.exec(statement)
+        results = result.all()
+
+        return results, total
+
     async def exists(self, confess_id: UUID) -> bool:
         """Check if confess form exists"""
         result = await self.get_by_id(confess_id)

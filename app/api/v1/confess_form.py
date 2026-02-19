@@ -232,3 +232,50 @@ async def get_all_confess_forms_admin(
         page_size=page_size,
         items=[ConfessFormResponse.model_validate(cf) for cf in confess_forms]
     )
+
+
+@router.get(
+    "/paid",
+    response_model=ConfessFormListResponse,
+    summary="Get user's paid confess forms"
+)
+async def get_user_paid_forms(
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=10, ge=1, le=100),
+        current_user: User = Depends(get_current_user),
+        service: ConfessFormService = Depends(get_confess_service)
+):
+    """
+    Get all confess forms for the current user that have been marked as paid.
+    """
+    return await service.get_user_paid_forms(
+        user_id=current_user.id,
+        page=page,
+        page_size=page_size
+    )
+
+
+from app.schemas.paystack import PaystackInitializeRequest, PaystackInitializeResponse
+
+@router.post(
+    "/{confess_id}/initialize-payment",
+    response_model=PaystackInitializeResponse,
+    summary="Initialize payment for a specific confess form"
+)
+async def initialize_form_payment(
+        confess_id: UUID,
+        request: PaystackInitializeRequest,
+        current_user: User = Depends(get_current_user),
+        service: ConfessFormService = Depends(get_confess_service)
+):
+    """
+    Initialize a Paystack transaction for a specific confess form.
+    Upon successful payment, the form will be marked as paid.
+    """
+    return await service.initialize_paid_form_payment(
+        confess_id=confess_id,
+        user_id=current_user.id,
+        email=request.email,
+        amount=request.amount,
+        callback_url=request.callback_url
+    )

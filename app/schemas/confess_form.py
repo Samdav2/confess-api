@@ -94,6 +94,7 @@ class ConfessFormResponse(BaseModel):
     date_tpe: Optional[List[str]] = None
     recipient_date_proposal: Optional[datetime] = None
     ai_message: Optional[str] = None
+    paid: bool = False
     slug: Optional[str]
     created_at: datetime
     updated_at: datetime

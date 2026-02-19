@@ -1,6 +1,7 @@
 from app.models.waitlist import Waitlist
 from sqlmodel import select
 from app.schemas.waitlist import WaitlistCreate
+from typing import List
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from fastapi import HTTPException
 
@@ -37,3 +38,15 @@ async def get_user_waitlist_repo(db: AsyncSession, email: str) -> Waitlist:
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error Getting User Waitlist. Full Error code: {e}")
+
+
+async def get_all_waitlist_repo(db: AsyncSession) -> List[Waitlist]:
+    """
+    Fetches all entries from the waitlist.
+    """
+    stmt = select(Waitlist)
+    try:
+        payload = await db.execute(stmt)
+        return payload.scalars().all()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting all waitlist entries: {e}")
