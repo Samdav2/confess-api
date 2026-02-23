@@ -6,6 +6,7 @@ import secrets
 from bcrypt import hashpw, gensalt, checkpw
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
+from google.auth.transport import requests as google_request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.config.settings import settings
@@ -469,7 +470,7 @@ async def google_callback_login(token: GoogleCallBack, db: AsyncSession) -> Tupl
     :param db:
     """
 
-    user_info = id_token.verify_oauth2_token(token.id_token, requests.Request(), GOOGLE_CLIENT_ID)
+    user_info = id_token.verify_oauth2_token(token.id_token, google_request.Request(), GOOGLE_CLIENT_ID)
     user_email = user_info["email"]
 
     user = await get_user_by_email(db, user_email)
@@ -501,8 +502,7 @@ async def google_callback_signup(token: GoogleCallBack, db: AsyncSession) -> Tup
         HTTPException: If user already exists or token is invalid
     """
     try:
-        # Verify the Google ID token
-        user_info = id_token.verify_oauth2_token(token.id_token, requests.Request(), GOOGLE_CLIENT_ID)
+        user_info = id_token.verify_oauth2_token(token.id_token, google_request.Request(), GOOGLE_CLIENT_ID)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -518,7 +518,6 @@ async def google_callback_signup(token: GoogleCallBack, db: AsyncSession) -> Tup
             detail="Email not provided by Google"
         )
 
-    # Check if user already exists
     existing_user = await get_user_by_email(db=db, email=user_email)
     if existing_user:
         raise HTTPException(
@@ -526,19 +525,16 @@ async def google_callback_signup(token: GoogleCallBack, db: AsyncSession) -> Tup
             detail="User with this email already exists"
         )
 
-    # Generate referral code
     referral_code = await generate_referral_code(given_name)
 
-    # Create new user with Google auth
-    # For Google auth users, password is not used, so we set it to empty hash
     new_user = User(
         email=user_email,
         username=given_name,
-        password=hash_password(""),  # Empty password for Google auth users
+        password=hash_password(""),
         referral_code=referral_code,
         referred_by="",
         google_auth=True,
-        email_verified=True,  # Google emails are pre-verified
+        email_verified=True,
     )
 
     try:
@@ -565,7 +561,6 @@ async def google_callback_signup(token: GoogleCallBack, db: AsyncSession) -> Tup
                 detail="User already exists"
             )
 
-    # Generate access token
     access_token = create_access_token(
         user_id=str(new_user.id),
         email=new_user.email
