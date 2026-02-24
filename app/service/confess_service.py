@@ -8,6 +8,7 @@ import secrets
 
 from app.models.confess import AnonymousLink, AnonymousMessage
 from app.schemas.confess import AnonymousLinkCreateRequest, AnonymousMessageCreateRequest
+from app.service.notification_service import notification_service
 
 class ConfessService:
     async def create_link(
@@ -98,7 +99,33 @@ class ConfessService:
         session.add(message)
         await session.commit()
         await session.refresh(message)
+
+        # Create notification for the link owner
+        try:
+            await notification_service.create_notification(
+                session=session,
+                user_id=link.user_id,
+                notification_type="anonymous_message",
+                title="New anonymous message! 💌",
+                content="Someone sent a message to your anonymous link.",
+                reference_id=message.id,
+                reference_type="anonymous_message",
+                metadata={"link_slug": slug},
+            )
+        except Exception:
+            # Don't fail the message submission if notification creation fails
+            pass
+
         return message
+
+    async def get_user_links(self, session: AsyncSession, user_id: UUID) -> List[AnonymousLink]:
+        statement = (
+            select(AnonymousLink)
+            .where(AnonymousLink.user_id == user_id)
+            .order_by(AnonymousLink.created_at.desc())
+        )
+        results = await session.exec(statement)
+        return results.all()
 
     async def get_messages(self, session: AsyncSession, link_id: UUID) -> List[AnonymousMessage]:
         statement = select(AnonymousMessage).where(AnonymousMessage.link_id == link_id).order_by(AnonymousMessage.created_at.desc())

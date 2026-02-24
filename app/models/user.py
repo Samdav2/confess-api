@@ -29,3 +29,4 @@ class User(SQLModel, table=True):
     confess_forms: Optional[List["ConfessForm"]] = Relationship(back_populates="user")
     anonymous_links: Optional[List["AnonymousLink"]] = Relationship(back_populates="user")
     feedbacks: Optional[List["Feedback"]] = Relationship(back_populates="user")
+    notifications: Optional[List["Notification"]] = Relationship(back_populates="user")

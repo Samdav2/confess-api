@@ -23,6 +23,13 @@ async def create_confession_link(
 ):
     return await confess_service.create_link(session, current_user.id, request)
 
+@router.get("/links", response_model=List[AnonymousLinkResponse])
+async def get_my_links(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    return await confess_service.get_user_links(session, current_user.id)
+
 @router.get("/links/{slug}", response_model=AnonymousLinkResponse)
 async def get_confession_link(
     slug: str,
