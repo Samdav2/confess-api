@@ -5,10 +5,13 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from fastapi import HTTPException, status
 import secrets
+import logging
 
 from app.models.confess import AnonymousLink, AnonymousMessage
 from app.schemas.confess import AnonymousLinkCreateRequest, AnonymousMessageCreateRequest
 from app.service.notification_service import notification_service
+
+logger = logging.getLogger(__name__)
 
 class ConfessService:
     async def create_link(
@@ -97,10 +100,9 @@ class ConfessService:
             longitude=longitude
         )
         session.add(message)
-        await session.commit()
-        await session.refresh(message)
+        await session.flush()  # get message.id without committing yet
 
-        # Create notification for the link owner
+        # Create notification for the link owner — same transaction
         try:
             await notification_service.create_notification(
                 session=session,
@@ -112,9 +114,13 @@ class ConfessService:
                 reference_type="anonymous_message",
                 metadata={"link_slug": slug},
             )
-        except Exception:
+        except Exception as e:
             # Don't fail the message submission if notification creation fails
-            pass
+            logger.error(f"Failed to create notification for anonymous message: {e}", exc_info=True)
+
+        # Commit everything together
+        await session.commit()
+        await session.refresh(message)
 
         return message
 

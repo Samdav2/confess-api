@@ -53,6 +53,16 @@ async def get_unread_count(
     return {"unread_count": count}
 
 
+@router.put("/read-all")
+async def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Mark all notifications as read for the current user."""
+    count = await notification_service.mark_all_as_read(session, current_user.id)
+    return {"message": f"Marked {count} notifications as read", "count": count}
+
+
 @router.put("/{notification_id}/read", response_model=NotificationResponse)
 async def mark_notification_read(
     notification_id: UUID,
@@ -69,16 +79,6 @@ async def mark_notification_read(
             detail="Notification not found",
         )
     return notification
-
-
-@router.put("/read-all")
-async def mark_all_notifications_read(
-    current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
-):
-    """Mark all notifications as read for the current user."""
-    count = await notification_service.mark_all_as_read(session, current_user.id)
-    return {"message": f"Marked {count} notifications as read", "count": count}
 
 
 @router.delete("/{notification_id}")

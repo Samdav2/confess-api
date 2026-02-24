@@ -14,7 +14,7 @@ class NotificationRepository:
     async def create(self, notification: Notification) -> Notification:
         """Create a new notification."""
         self.session.add(notification)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(notification)
         return notification
 
