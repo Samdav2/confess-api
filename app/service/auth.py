@@ -294,6 +294,12 @@ async def login_user(db: AsyncSession, email: str, password: str) -> Tuple[User,
         email=user.email
     )
 
+    if user.google_auth:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized login attempt. User sigup with google must login with same route"
+        )
+
     return user, access_token, get_token_expiry_seconds()
 
 

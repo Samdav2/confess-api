@@ -7,12 +7,16 @@ from uuid import UUID
 class AnonymousLinkCreateRequest(BaseModel):
     header_text: str = "Send me a message 💌"
     theme_color: str = "#8b5cf6"
+    text_color: str = "#ffffff"
+    emoji: str = "❤️"
 
 class AnonymousLinkResponse(BaseModel):
     id: UUID
     slug: str
     header_text: str
     theme_color: str
+    emoji: str
+    text_color: str
     is_active: bool
     expires_at: datetime
     created_at: datetime

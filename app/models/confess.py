@@ -9,7 +9,9 @@ class AnonymousLink(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="users.id", index=True)
     slug: str = Field(unique=True, index=True)
     header_text: str = Field(default="Send me a message 💌")
-    theme_color: str = Field(default="#8b5cf6")  # Default purple
+    theme_color: str = Field(default="#8b5cf6")
+    text_color: str = Field(default="#ffffff")
+    emoji: str = Field(default="❤️")
     is_active: bool = Field(default=True)
     is_extended: bool = Field(default=False)
     expires_at: datetime = Field(nullable=False)
