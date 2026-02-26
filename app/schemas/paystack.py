@@ -15,9 +15,11 @@ class PaystackInitializeResponse(BaseModel):
     reference: str
 
 class PaystackVerifyResponse(BaseModel):
-    status: str
+    payment_status: str          # success | failed | abandoned
+    is_paid: bool
     message: str
-    data: Optional[dict] = None
+    reference: Optional[str] = None
+    amount: Optional[float] = None   # in main currency unit (e.g. Naira)
 
 class PaymentResponse(BaseModel):
     id: UUID

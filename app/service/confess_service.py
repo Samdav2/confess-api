@@ -31,6 +31,8 @@ class ConfessService:
             slug=slug,
             header_text=request.header_text,
             theme_color=request.theme_color,
+            text_color=request.text_color,
+            emoji=request.emoji,
             expires_at=expires_at
         )
         session.add(link)
