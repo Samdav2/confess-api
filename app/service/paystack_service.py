@@ -102,11 +102,11 @@ class PaystackService:
             if paystack_status == "success" and payment.status != "success":
                 payment.status = "success"
                 payment.paid_at = (
-                    datetime.fromisoformat(data["paid_at"].replace("Z", "+00:00"))
+                    datetime.fromisoformat(data["paid_at"].replace("Z", "+00:00")).replace(tzinfo=None)
                     if data.get("paid_at") else None
                 )
                 payment.channel = data.get("channel")
-                payment.updated_at = datetime.now(timezone.utc)
+                payment.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 session.add(payment)
 
                 # Link to ConfessForm if metadata exists
@@ -213,9 +213,9 @@ class PaystackService:
 
             if payment and payment.status != "success":
                 payment.status = "success"
-                payment.paid_at = datetime.fromisoformat(data["paid_at"].replace("Z", "+00:00")) if data.get("paid_at") else None
+                payment.paid_at = datetime.fromisoformat(data["paid_at"].replace("Z", "+00:00")).replace(tzinfo=None) if data.get("paid_at") else None
                 payment.channel = data.get("channel")
-                payment.updated_at = datetime.now(timezone.utc)
+                payment.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 session.add(payment)
 
                 # Link to ConfessForm if metadata exists
