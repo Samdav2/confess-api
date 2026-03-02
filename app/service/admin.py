@@ -94,3 +94,27 @@ async def get_dashboard_metrics(db: AsyncSession) -> Dict[str, int]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch dashboard metrics: {str(e)}"
         )
+
+async def get_all_users_admin(db: AsyncSession, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+    total = await db.execute(select(func.count()).select_from(User))
+    statement = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(statement)
+    return {"total": total.scalar() or 0, "items": result.scalars().all()}
+
+async def get_all_confess_forms_admin(db: AsyncSession, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+    total = await db.execute(select(func.count()).select_from(ConfessForm))
+    statement = select(ConfessForm).order_by(ConfessForm.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(statement)
+    return {"total": total.scalar() or 0, "items": result.scalars().all()}
+
+async def get_all_anonymous_links_admin(db: AsyncSession, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+    total = await db.execute(select(func.count()).select_from(AnonymousLink))
+    statement = select(AnonymousLink).order_by(AnonymousLink.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(statement)
+    return {"total": total.scalar() or 0, "items": result.scalars().all()}
+
+async def get_all_anonymous_messages_admin(db: AsyncSession, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+    total = await db.execute(select(func.count()).select_from(AnonymousMessage))
+    statement = select(AnonymousMessage).order_by(AnonymousMessage.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(statement)
+    return {"total": total.scalar() or 0, "items": result.scalars().all()}

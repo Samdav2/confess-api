@@ -3,6 +3,11 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
+from typing import List
+from app.schemas.user import UserResponse
+from app.schemas.confess_form import ConfessFormResponse
+from app.schemas.confess import AnonymousLinkResponse, AnonymousMessageResponse
+
 class AdminCreate(BaseModel):
     email: EmailStr
     username: str
@@ -38,3 +43,19 @@ class DashboardStatsResponse(BaseModel):
     total_confess_forms: int
     total_anonymous_links: int
     total_messages: int
+
+class PaginatedUsersResponse(BaseModel):
+    total: int
+    items: List[UserResponse]
+
+class PaginatedConfessFormsResponse(BaseModel):
+    total: int
+    items: List[ConfessFormResponse]
+
+class PaginatedAnonymousLinksResponse(BaseModel):
+    total: int
+    items: List[AnonymousLinkResponse]
+
+class PaginatedAnonymousMessagesResponse(BaseModel):
+    total: int
+    items: List[AnonymousMessageResponse]

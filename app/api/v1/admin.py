@@ -11,13 +11,21 @@ from app.schemas.admin import (
     AdminResponse,
     AdminPasswordReset,
     AdminLoginResponse,
-    DashboardStatsResponse
+    DashboardStatsResponse,
+    PaginatedUsersResponse,
+    PaginatedConfessFormsResponse,
+    PaginatedAnonymousLinksResponse,
+    PaginatedAnonymousMessagesResponse
 )
 from app.service.admin import (
     create_admin,
     login_admin,
     reset_admin_password,
-    get_dashboard_metrics
+    get_dashboard_metrics,
+    get_all_users_admin,
+    get_all_confess_forms_admin,
+    get_all_anonymous_links_admin,
+    get_all_anonymous_messages_admin
 )
 from app.models.admin import Admin
 
@@ -69,3 +77,47 @@ async def dashboard_stats(
     """
     metrics = await get_dashboard_metrics(db=db)
     return DashboardStatsResponse(**metrics)
+
+@router.get("/users", response_model=PaginatedUsersResponse, summary="[Admin] Get paginated users")
+async def get_users(
+    skip: int = 0,
+    limit: int = 100,
+    current_admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_session)
+):
+    """Get all standard users."""
+    data = await get_all_users_admin(db=db, skip=skip, limit=limit)
+    return data
+
+@router.get("/confess-forms", response_model=PaginatedConfessFormsResponse, summary="[Admin] Get paginated confess forms")
+async def get_confess_forms(
+    skip: int = 0,
+    limit: int = 100,
+    current_admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_session)
+):
+    """Get all confess forms."""
+    data = await get_all_confess_forms_admin(db=db, skip=skip, limit=limit)
+    return data
+
+@router.get("/anonymous-links", response_model=PaginatedAnonymousLinksResponse, summary="[Admin] Get paginated anonymous links")
+async def get_anonymous_links(
+    skip: int = 0,
+    limit: int = 100,
+    current_admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_session)
+):
+    """Get all anonymous links."""
+    data = await get_all_anonymous_links_admin(db=db, skip=skip, limit=limit)
+    return data
+
+@router.get("/anonymous-messages", response_model=PaginatedAnonymousMessagesResponse, summary="[Admin] Get paginated anonymous messages")
+async def get_anonymous_messages(
+    skip: int = 0,
+    limit: int = 100,
+    current_admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_session)
+):
+    """Get all anonymous messages."""
+    data = await get_all_anonymous_messages_admin(db=db, skip=skip, limit=limit)
+    return data
