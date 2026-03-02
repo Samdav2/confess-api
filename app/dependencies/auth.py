@@ -16,6 +16,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.config.settings import settings
 from app.db.sessions import get_session
 from app.models.user import User
+from app.models.admin import Admin
 from app.schemas.auth import TokenData
 from sqlmodel import select
 
@@ -164,6 +165,40 @@ async def get_current_user(
         )
 
     return user
+
+async def get_current_admin(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_session)
+) -> Admin:
+    """
+    Dependency to get the current authenticated admin from JWT token.
+    Uses auth logic similar to standard users.
+    """
+    token_data = verify_token(token)
+
+    try:
+        user_id = UUID(token_data.user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin ID in token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Query admin from database
+    statement = select(Admin).where(Admin.id == user_id)
+    result = await db.execute(statement)
+    admin = result.scalar_one_or_none()
+
+    if admin is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin not found or unauthorized",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return admin
+
 
 
 async def get_current_active_user(
