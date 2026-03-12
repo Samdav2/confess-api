@@ -20,7 +20,8 @@ class PaystackService:
         }
 
     async def initialize_transaction(
-        self, session: AsyncSession, user_id: str, email: str, amount: float, callback_url: str = None, confess_form_id: str = None
+        self, session: AsyncSession, user_id: str, email: str, amount: float, callback_url: str = None,
+        confess_form_id: str = None, celebration_id: str = None, additional_metadata: dict = None
     ) -> PaystackInitializeResponse:
         url = f"{self.BASE_URL}/transaction/initialize"
         # Paystack amount is in kobo
@@ -29,6 +30,11 @@ class PaystackService:
         metadata = {"user_id": str(user_id)}
         if confess_form_id:
             metadata["confess_form_id"] = str(confess_form_id)
+        if celebration_id:
+            metadata["celebration_id"] = str(celebration_id)
+
+        if additional_metadata:
+            metadata.update(additional_metadata)
 
         payload = {
             "email": email,
@@ -125,6 +131,14 @@ class PaystackService:
                         if confess_form:
                             confess_form.paid = True
                             session.add(confess_form)
+
+                    celebration_id = metadata.get("celebration_id")
+                    if celebration_id:
+                        from app.models.celebration import CelebrationPage, PaymentStatus
+                        celebration = await session.get(CelebrationPage, celebration_id)
+                        if celebration:
+                            celebration.payment_status = PaymentStatus.PAID
+                            session.add(celebration)
 
                 await session.commit()
                 await session.refresh(payment)
@@ -234,6 +248,14 @@ class PaystackService:
                         if confess_form:
                             confess_form.paid = True
                             session.add(confess_form)
+
+                    celebration_id = metadata.get("celebration_id")
+                    if celebration_id:
+                        from app.models.celebration import CelebrationPage, PaymentStatus
+                        celebration = await session.get(CelebrationPage, celebration_id)
+                        if celebration:
+                            celebration.payment_status = PaymentStatus.PAID
+                            session.add(celebration)
 
                 await session.commit()
 

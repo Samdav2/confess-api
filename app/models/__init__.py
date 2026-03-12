@@ -6,3 +6,4 @@ from .confess import AnonymousLink, AnonymousMessage
 from .notification import Notification
 from .payment import Payment
 from .admin import Admin
+from .celebration import CelebrationPage
