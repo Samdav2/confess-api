@@ -45,7 +45,7 @@ class Settings(BaseSettings):
         except FileNotFoundError:
             return ""
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2880
 
     # SMTP Email Settings
     SMTP_HOST: str = os.getenv("SMTP_HOST", "")
