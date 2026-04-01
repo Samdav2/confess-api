@@ -123,6 +123,7 @@ class CelebrationService:
         """
         Send celebration notification via Email or SMS.
         """
+        sender_name = ""
         if celebration.delivery == DeliveryMethod.PHONE:
             if not celebration.phone:
                 raise HTTPException(
@@ -155,7 +156,7 @@ class CelebrationService:
                 background_tasks=background_tasks,
                 email_to=celebration.email,
                 name=celebration.recipient_name or "Friend",
-                sender_name=celebration.user.username if celebration.user else "Someone",
+                sender_name=sender_name,
                 occasion_type=celebration.occasion_type.value,
                 slug=celebration.slug
             )
