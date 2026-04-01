@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import Optional
@@ -31,11 +31,12 @@ async def check_slug(
 @router.post("/", response_model=CelebrationPageResponse, status_code=status.HTTP_201_CREATED)
 async def create_celebration(
     data: CelebrationPageCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     service: CelebrationService = Depends(get_celebration_service)
 ):
     """Create a new celebration page."""
-    return await service.create_celebration_page(current_user.id, data)
+    return await service.create_celebration_page(current_user.id, data, background_tasks)
 
 @router.get("/{slug}", response_model=CelebrationPageResponse)
 async def get_celebration(

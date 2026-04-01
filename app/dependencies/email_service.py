@@ -524,4 +524,34 @@ class EmailService:
             template_name="confess_viewed_notification.html"
         )
 
+    @staticmethod
+    def send_celebration_notification(
+            background_tasks: BackgroundTasks,
+            email_to: str,
+            name: str,
+            sender_name: str,
+            occasion_type: str,
+            slug: str
+    ) -> None:
+        """
+        Send email notification for a celebration page.
+        """
+        subject_line = f"A special celebration page for you from {sender_name}"
+
+        EmailService._add_task(
+            background_tasks=background_tasks,
+            subject=subject_line,
+            email_to=email_to,
+            template_body={
+                "name": name,
+                "sender_name": sender_name,
+                "occasion_type": occasion_type,
+                "slug": slug,
+                "project_name": settings.PROJECT_NAME,
+                "cta_link": f"{settings.FRONTEND_URL}/celebration/{slug}",
+                "cta_text": "View Celebration Page"
+            },
+            template_name="celebration_notification.html"
+        )
+
 email_service = EmailService()

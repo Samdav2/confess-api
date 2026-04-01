@@ -1,0 +1,18 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<p>You have received a new celebration page from <strong>{{ sender_name }}</strong> for your <strong>{{ occasion_type
+        }}</strong>!</p>
+
+<p>To view your special celebration page, click the button below:</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ cta_link }}" class="button"
+        style="background-color: #e91e63; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">{{
+        cta_text }}</a>
+</div>
+
+<p>Best regards,<br>The {{ project_name }} Team</p>
+{% endblock %}

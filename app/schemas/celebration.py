@@ -1,8 +1,19 @@
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel, Field as PydanticField, EmailStr, Field
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 from app.models.celebration import OccasionType, MusicType, PaymentStatus
+from enum import Enum
+
+class ConfessType(str, Enum):
+    DINNER_DATE = "dinner_date"
+    ANONYMOUS = "anonymous"
+    APPRECIATION = "appreciation"
+
+
+class DeliveryMethod(str, Enum):
+    EMAIL = "email"
+    PHONE = "phone"
 
 class CelebrationPageBase(BaseModel):
     slug: str
@@ -11,6 +22,9 @@ class CelebrationPageBase(BaseModel):
     images: List[str] = []
     music_type: MusicType = MusicType.NONE
     music_url: Optional[str] = None
+    delivery: DeliveryMethod = Field(default=DeliveryMethod.EMAIL)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
 
 class CelebrationPageCreate(CelebrationPageBase):
     pass

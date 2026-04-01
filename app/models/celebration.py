@@ -5,6 +5,13 @@ from sqlmodel import SQLModel, Field, Relationship
 from uuid import UUID, uuid4
 from enum import Enum
 
+
+class DeliveryMethod(str, Enum):
+    EMAIL = "email"
+    PHONE = "phone"
+
+
+
 class OccasionType(str, Enum):
     BIRTHDAY = "birthday"
     ANNIVERSARY = "anniversary"
@@ -32,6 +39,9 @@ class CelebrationPage(SQLModel, table=True):
     occasion_type: OccasionType = Field(sa_column=Column(SAEnum(OccasionType), nullable=False, index=True))
     images: List[str] = Field(sa_column=Column(JSON, nullable=False, default=[]))
     music_type: MusicType = Field(sa_column=Column(SAEnum(MusicType), nullable=False, default=MusicType.NONE))
+    delivery: DeliveryMethod = Field(nullable=False, default=DeliveryMethod.EMAIL, index=True)
+    email: str = Field(nullable=True, index=True)
+    phone: str = Field(nullable=True, index=True)
     music_url: Optional[str] = Field(default=None)
     created_by: UUID = Field(foreign_key="users.id", nullable=False, index=True)
     total_price: float = Field(sa_column=Column(Float, nullable=False))
