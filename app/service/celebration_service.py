@@ -176,7 +176,7 @@ class CelebrationService:
         skip = (page - 1) * page_size
         return await self.repository.get_by_user_id(user_id, skip, page_size)
 
-    async def initialize_payment(self, celebration_id: UUID, user_id: UUID, email: str, callback_url: Optional[str] = None):
+    async def initialize_payment(self, celebration_id: UUID, user_id: UUID, amount, email: str, callback_url: Optional[str] = None):
         celebration = await self.repository.get_by_id(celebration_id)
         if not celebration:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Celebration page not found")
@@ -191,7 +191,7 @@ class CelebrationService:
             session=self.session,
             user_id=str(user_id),
             email=email,
-            amount=celebration.total_price,
+            amount=amount,
             callback_url=callback_url,
             celebration_id=str(celebration_id)
         )
