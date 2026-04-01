@@ -47,11 +47,11 @@ class KudiSMSService:
 
             except requests.exceptions.HTTPError:
                 logger.error(f"Kudi SMS API HTTP Error: {response.text}")
-                raise
+                return {"status": "error", "message": f"HTTP Error: {response.status_code}"}
 
         except Exception as e:
             logger.error(f"Failed to send Kudi SMS: {e}")
-            raise
+            return {"status": "error", "message": str(e)}
 
 # Singleton instance
 kudi_sms_service = KudiSMSService()

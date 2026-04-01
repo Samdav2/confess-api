@@ -8,6 +8,7 @@ from app.repo.celebration import CelebrationRepository
 from app.service.paystack_service import paystack_service
 from fastapi import BackgroundTasks
 from app.models.celebration import DeliveryMethod
+from app.config.settings import settings
 import re
 
 class CelebrationService:
@@ -150,7 +151,6 @@ class CelebrationService:
                 )
 
             from app.dependencies.email_service import email_service
-            from app.config.settings import settings
 
             email_service.send_celebration_notification(
                 background_tasks=background_tasks,
