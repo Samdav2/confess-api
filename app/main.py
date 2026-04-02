@@ -30,6 +30,9 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title=settings.PROJECT_NAME,
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 app.state.limiter = limiter
 app.add_exception_handler(429, _rate_limit_exceeded_handler)
