@@ -548,7 +548,7 @@ class EmailService:
                 "occasion_type": occasion_type,
                 "slug": slug,
                 "project_name": settings.PROJECT_NAME,
-                "cta_link": f"{settings.FRONTEND_URL}/celebration/{slug}",
+                "cta_link": f"{settings.FRONTEND_URL}/{slug}",
                 "cta_text": "View Celebration Page"
             },
             template_name="celebration_notification.html"
