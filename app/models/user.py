@@ -31,3 +31,4 @@ class User(SQLModel, table=True):
     celebration_pages: Optional[List["CelebrationPage"]] = Relationship(back_populates="user")
     feedbacks: Optional[List["Feedback"]] = Relationship(back_populates="user")
     notifications: Optional[List["Notification"]] = Relationship(back_populates="user")
+    comments: Optional[List["Comment"]] = Relationship(back_populates="user")

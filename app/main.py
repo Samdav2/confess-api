@@ -58,11 +58,15 @@ app.add_middleware(SlowAPIMiddleware)
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.admin import router as admin_router
+from app.api.v1.admin_posts import router as admin_posts_router
+from app.api.v1.posts import router as public_posts_router
 from app.api.feedback import feedback_router
 
 # Auth endpoints MUST be public so Swagger can get a token
 app.include_router(auth_router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(public_posts_router, prefix=f"{settings.API_V1_STR}/posts", tags=["posts"])
 app.include_router(admin_router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin"])
+app.include_router(admin_posts_router, prefix=f"{settings.API_V1_STR}/admin/posts", tags=["admin-posts"])
 app.include_router(feedback_router, prefix=f"{settings.API_V1_STR}/feedback", tags=["feedback"])
 # All other API endpoints require the X-API-KEY
 app.include_router(api_router, prefix=settings.API_V1_STR, dependencies=[Depends(get_api_key)])
