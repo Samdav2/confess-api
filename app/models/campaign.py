@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 from enum import Enum
-from sqlalchemy import Column, DateTime, JSON
+from sqlalchemy import Column, DateTime, JSON, Text
 from sqlmodel import SQLModel, Field
 
 
