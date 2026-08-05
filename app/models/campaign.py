@@ -34,7 +34,6 @@ class EmailCampaign(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc)
     )
     updated_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), nullable=False),
-        default_factory=lambda: datetime.now(timezone.utc),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
+        sa_column=Column(DateTime(timezone=True), nullable=False, onupdate=lambda: datetime.now(timezone.utc)),
+        default_factory=lambda: datetime.now(timezone.utc)
     )
