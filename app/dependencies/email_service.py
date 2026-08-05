@@ -612,7 +612,8 @@ class EmailService:
             import hashlib
             import time
             unique_id = hashlib.md5(f"{email_to}{time.time()}".encode()).hexdigest()[:12]
-            custom_id = f"confess-campaign-{campaign_id}-{unique_id}"
+            short_id = str(campaign_id).replace("-", "")[:12]
+            custom_id = f"confess-cmp-{short_id}-{unique_id}"
 
             message_payload = {
                 "From": {
