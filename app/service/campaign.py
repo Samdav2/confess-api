@@ -109,27 +109,40 @@ class CampaignService:
         result = await session.exec(stmt)
         users = list(result.all())
 
-        campaign.total_recipients = len(users)
+        # Snapshot user data before any commit expires ORM instances
+        recipients = [
+            {"email": user.email, "username": user.username}
+            for user in users
+        ]
+
+        campaign.total_recipients = len(recipients)
         await repo.update(campaign)
 
+        # Snapshot campaign fields before commit expires them
+        camp_subject = campaign.subject
+        camp_html = campaign.html_content
+        camp_preview = campaign.preview_text or ""
+        camp_id = campaign.id
+        camp_cta_link = campaign.cta_link
+        camp_cta_text = campaign.cta_text
         sender_name = campaign.sender_name or "Confess Team"
 
-        for user in users:
+        for r in recipients:
             background_tasks.add_task(
                 EmailService._send_campaign_email,
-                subject=campaign.subject,
-                email_to=user.email,
-                name=user.username,
-                html_content=campaign.html_content,
-                preview_text=campaign.preview_text or "",
+                subject=camp_subject,
+                email_to=r["email"],
+                name=r["username"],
+                html_content=camp_html,
+                preview_text=camp_preview,
                 sender_name=sender_name,
-                campaign_id=campaign.id,
-                cta_link=campaign.cta_link,
-                cta_text=campaign.cta_text,
+                campaign_id=camp_id,
+                cta_link=camp_cta_link,
+                cta_text=camp_cta_text,
             )
 
         campaign.status = CampaignStatus.SENT
-        campaign.sent_count = len(users)
+        campaign.sent_count = len(recipients)
         campaign.sent_at = datetime.now(timezone.utc)
         return await repo.update(campaign)
 
