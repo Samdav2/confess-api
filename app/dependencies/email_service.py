@@ -564,6 +564,8 @@ class EmailService:
         preview_text: str,
         sender_name: str,
         campaign_id: UUID,
+        cta_link: str = None,
+        cta_text: str = None,
     ):
         template_body = {
             "name": name,
@@ -574,6 +576,8 @@ class EmailService:
             "subject": subject,
             "site_url": settings.FRONTEND_URL,
             "current_year": datetime.now().year,
+            "cta_link": cta_link,
+            "cta_text": cta_text,
         }
         html_part = EmailService._render_template("promotional_email.html", template_body)
 

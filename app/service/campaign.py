@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, Tuple
 from uuid import UUID
 from datetime import datetime, timezone
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -10,17 +10,40 @@ from app.repo.campaign import CampaignRepository
 from app.dependencies.email_service import EmailService
 from app.models.user import User
 from sqlmodel import select
+from app.constants.email_templates import (
+    get_all_templates,
+    get_template_by_id,
+    EmailTemplatePreset,
+)
 
 
 class CampaignService:
+    def list_templates(self) -> List[EmailTemplatePreset]:
+        return get_all_templates()
+
+    def get_template(self, template_id: str) -> Optional[EmailTemplatePreset]:
+        return get_template_by_id(template_id)
+
     async def create_campaign(
         self, session: AsyncSession, data: CampaignCreate, admin_id: UUID
     ) -> EmailCampaign:
+        template_type = data.template_type or "promotional"
+        preset = get_template_by_id(template_type)
+
+        subject = data.subject or (preset.subject if preset else "Notification from Confess")
+        preview_text = data.preview_text or (preset.preview_text if preset else None)
+        html_content = data.html_content or (preset.html_content if preset else "<p>No content provided</p>")
+        cta_link = data.cta_link or (preset.cta_link if preset else None)
+        cta_text = data.cta_text or (preset.cta_text if preset else None)
+
         campaign = EmailCampaign(
-            subject=data.subject,
-            preview_text=data.preview_text,
-            html_content=data.html_content,
+            subject=subject,
+            preview_text=preview_text,
+            html_content=html_content,
             sender_name=data.sender_name,
+            template_type=template_type,
+            cta_link=cta_link,
+            cta_text=cta_text,
             created_by=admin_id,
             scheduled_at=data.scheduled_at,
         )
@@ -35,7 +58,7 @@ class CampaignService:
 
     async def list_campaigns(
         self, session: AsyncSession, skip: int = 0, limit: int = 50
-    ) -> tuple[list[EmailCampaign], int]:
+    ) -> Tuple[List[EmailCampaign], int]:
         repo = CampaignRepository(session)
         return await repo.get_all(skip=skip, limit=limit)
 
@@ -48,6 +71,11 @@ class CampaignService:
             return None
 
         update_data = data.model_dump(exclude_unset=True)
+        if "description" in update_data:
+            del update_data["description"]
+        if "email_content" in update_data:
+            del update_data["email_content"]
+
         if "status" in update_data and update_data["status"] not in [
             s.value for s in CampaignStatus
         ]:
@@ -98,6 +126,8 @@ class CampaignService:
                 preview_text=campaign.preview_text or "",
                 sender_name=sender_name,
                 campaign_id=campaign.id,
+                cta_link=campaign.cta_link,
+                cta_text=campaign.cta_text,
             )
 
         campaign.status = CampaignStatus.SENT

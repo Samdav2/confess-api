@@ -11,10 +11,37 @@ from app.schemas.campaign import (
     CampaignResponse,
     CampaignListResponse,
     CampaignSendRequest,
+    EmailTemplateResponse,
+    EmailTemplateListResponse,
 )
 from app.service.campaign import campaign_service
 
 router = APIRouter()
+
+
+@router.get("/templates", response_model=EmailTemplateListResponse)
+async def list_email_templates(
+    current_admin: Admin = Depends(get_current_admin),
+):
+    templates = campaign_service.list_templates()
+    return EmailTemplateListResponse(
+        total=len(templates),
+        templates=[EmailTemplateResponse(**t.model_dump()) for t in templates],
+    )
+
+
+@router.get("/templates/{template_id}", response_model=EmailTemplateResponse)
+async def get_email_template(
+    template_id: str,
+    current_admin: Admin = Depends(get_current_admin),
+):
+    template = campaign_service.get_template(template_id)
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Email template '{template_id}' not found",
+        )
+    return EmailTemplateResponse(**template.model_dump())
 
 
 @router.post("", response_model=CampaignResponse, status_code=status.HTTP_201_CREATED)
