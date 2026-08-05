@@ -1,103 +1,100 @@
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Union
 from datetime import datetime
 from uuid import UUID
 
 
-class EmailTemplateCreate(BaseModel):
-    name: str = Field(..., max_length=255)
-    category: Optional[str] = Field(default="custom", max_length=50)
-    subject: str = Field(..., max_length=255)
-    preview_text: Optional[str] = Field(default=None, max_length=500)
-    description: Optional[str] = Field(default=None, max_length=500, description="Alias for preview_text")
-    html_content: Optional[str] = Field(default=None, description="HTML body content")
-    email_content: Optional[str] = Field(default=None, description="Alias for html_content")
-    cta_text: Optional[str] = Field(default=None, max_length=100)
-    cta_link: Optional[str] = Field(default=None, max_length=500)
-    image_urls: Optional[List[str]] = None
+# ---------------------------------------------------------------------------
+# Template Management (Admin CRUD)
+# ---------------------------------------------------------------------------
 
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_aliases(cls, values: dict) -> dict:
-        if isinstance(values, dict):
-            if "description" in values and not values.get("preview_text"):
-                values["preview_text"] = values["description"]
-            if "email_content" in values and not values.get("html_content"):
-                values["html_content"] = values["email_content"]
-        return values
+class EmailTemplateCreate(BaseModel):
+    """Create a new custom email template."""
+
+    name: str = Field(..., max_length=255, description="Internal template name")
+    category: str = Field(
+        default="custom", max_length=50,
+        description="Template category (e.g. custom, promotional, engagement, informational)",
+    )
+    subject: str = Field(..., max_length=255, description="Email subject line")
+    preview_text: Optional[str] = Field(
+        default=None, max_length=500,
+        description="Inbox preview / preheader text shown alongside the subject",
+    )
+    html_content: str = Field(
+        ..., description="Email body content (plain text or HTML markup)",
+    )
+    cta_text: Optional[str] = Field(
+        default=None, max_length=100,
+        description="Call-to-action button label",
+    )
+    cta_link: Optional[str] = Field(
+        default=None, max_length=500,
+        description="Call-to-action button URL",
+    )
+    image_urls: Optional[List[str]] = Field(
+        default=None, description="Optional list of image URLs to embed",
+    )
 
 
 class EmailTemplateUpdate(BaseModel):
+    """Partially update an existing custom email template."""
+
     name: Optional[str] = Field(default=None, max_length=255)
     category: Optional[str] = Field(default=None, max_length=50)
     subject: Optional[str] = Field(default=None, max_length=255)
     preview_text: Optional[str] = Field(default=None, max_length=500)
-    description: Optional[str] = Field(default=None, max_length=500, description="Alias for preview_text")
     html_content: Optional[str] = Field(default=None)
-    email_content: Optional[str] = Field(default=None, description="Alias for html_content")
     cta_text: Optional[str] = Field(default=None, max_length=100)
     cta_link: Optional[str] = Field(default=None, max_length=500)
     image_urls: Optional[List[str]] = None
 
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_aliases(cls, values: dict) -> dict:
-        if isinstance(values, dict):
-            if "description" in values and not values.get("preview_text"):
-                values["preview_text"] = values["description"]
-            if "email_content" in values and not values.get("html_content"):
-                values["html_content"] = values["email_content"]
-        return values
 
+# ---------------------------------------------------------------------------
+# Response Models
+# ---------------------------------------------------------------------------
 
-class CustomEmailTemplateResponse(BaseModel):
+class EmailTemplateResponse(BaseModel):
+    """Unified response for both pre-designed and custom templates."""
+
     model_config = ConfigDict(from_attributes=True)
 
-    id: Union[UUID, str]
+    id: Union[UUID, str] = Field(description="UUID for custom templates, string slug for pre-designed")
     name: str
     category: str
     subject: str
     preview_text: Optional[str] = None
-    description: Optional[str] = None
     html_content: str
-    email_content: Optional[str] = None
     cta_text: Optional[str] = None
     cta_link: Optional[str] = None
     image_urls: Optional[List[str]] = None
-    is_predesigned: bool = False
+    is_predesigned: bool = Field(
+        default=False,
+        description="True if this is a built-in preset template, False if admin-created",
+    )
     created_by: Optional[UUID] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    @model_validator(mode="before")
-    @classmethod
-    def populate_convenience_aliases(cls, values: dict) -> dict:
-        if isinstance(values, dict):
-            if not values.get("description") and values.get("preview_text"):
-                values["description"] = values["preview_text"]
-            if not values.get("email_content") and values.get("html_content"):
-                values["email_content"] = values["html_content"]
-        elif hasattr(values, "__dict__"):
-            # Model object
-            if not getattr(values, "description", None):
-                values.description = getattr(values, "preview_text", None)
-            if not getattr(values, "email_content", None):
-                values.email_content = getattr(values, "html_content", None)
-        return values
 
-
-class CustomEmailTemplateListResponse(BaseModel):
+class EmailTemplateListResponse(BaseModel):
     total: int
-    templates: List[CustomEmailTemplateResponse]
+    templates: List[EmailTemplateResponse]
 
+
+# ---------------------------------------------------------------------------
+# Template Preview
+# ---------------------------------------------------------------------------
 
 class EmailTemplatePreviewRequest(BaseModel):
-    sample_name: Optional[str] = Field(default="John Doe")
-    subject: Optional[str] = None
-    preview_text: Optional[str] = None
-    html_content: Optional[str] = None
-    cta_text: Optional[str] = None
-    cta_link: Optional[str] = None
+    """Override template fields for a rendered HTML preview."""
+
+    recipient_name: str = Field(default="John Doe", description="Sample recipient name for preview")
+    subject: Optional[str] = Field(default=None, description="Override subject line")
+    preview_text: Optional[str] = Field(default=None, description="Override preview text")
+    html_content: Optional[str] = Field(default=None, description="Override email body content")
+    cta_text: Optional[str] = Field(default=None, description="Override CTA button text")
+    cta_link: Optional[str] = Field(default=None, description="Override CTA button URL")
 
 
 class EmailTemplatePreviewResponse(BaseModel):

@@ -7,7 +7,7 @@ from app.models.email_template import AdminEmailTemplate
 from app.schemas.email_template import (
     EmailTemplateCreate,
     EmailTemplateUpdate,
-    CustomEmailTemplateResponse,
+    EmailTemplateResponse,
 )
 from app.repo.email_template import EmailTemplateRepository
 from app.constants.email_templates import get_all_templates, get_template_by_id
@@ -19,15 +19,12 @@ class EmailTemplateService:
     async def create_custom_template(
         self, session: AsyncSession, data: EmailTemplateCreate, admin_id: UUID
     ) -> AdminEmailTemplate:
-        html_content = data.html_content or data.email_content or "<p>No content provided</p>"
-        preview_text = data.preview_text or data.description
-
         template = AdminEmailTemplate(
             name=data.name,
             category=data.category or "custom",
             subject=data.subject,
-            preview_text=preview_text,
-            html_content=html_content,
+            preview_text=data.preview_text,
+            html_content=data.html_content,
             cta_text=data.cta_text,
             cta_link=data.cta_link,
             image_urls=data.image_urls,
@@ -38,44 +35,39 @@ class EmailTemplateService:
 
     async def list_all_templates(
         self, session: AsyncSession, skip: int = 0, limit: int = 50
-    ) -> tuple[List[CustomEmailTemplateResponse], int]:
+    ) -> tuple[List[EmailTemplateResponse], int]:
         repo = EmailTemplateRepository(session)
         custom_templates, total_custom = await repo.get_all(skip=skip, limit=limit)
 
         predesigned = get_all_templates()
-        response_list: List[CustomEmailTemplateResponse] = []
+        response_list: List[EmailTemplateResponse] = []
 
-        # 1. Add pre-designed templates
+        # Pre-designed templates first
         for p in predesigned:
             response_list.append(
-                CustomEmailTemplateResponse(
+                EmailTemplateResponse(
                     id=p.id,
                     name=p.name,
                     category=p.category,
                     subject=p.subject,
                     preview_text=p.preview_text,
-                    description=p.preview_text,
                     html_content=p.html_content,
-                    email_content=p.html_content,
                     cta_text=p.cta_text,
                     cta_link=p.cta_link,
-                    image_urls=None,
                     is_predesigned=True,
                 )
             )
 
-        # 2. Add custom templates from DB
+        # Custom templates from DB
         for c in custom_templates:
             response_list.append(
-                CustomEmailTemplateResponse(
+                EmailTemplateResponse(
                     id=c.id,
                     name=c.name,
                     category=c.category,
                     subject=c.subject,
                     preview_text=c.preview_text,
-                    description=c.preview_text,
                     html_content=c.html_content,
-                    email_content=c.html_content,
                     cta_text=c.cta_text,
                     cta_link=c.cta_link,
                     image_urls=c.image_urls,
@@ -91,41 +83,36 @@ class EmailTemplateService:
 
     async def get_template_by_id(
         self, session: AsyncSession, template_id: Union[str, UUID]
-    ) -> Optional[CustomEmailTemplateResponse]:
+    ) -> Optional[EmailTemplateResponse]:
         # Check pre-defined first
         template_id_str = str(template_id)
         preset = get_template_by_id(template_id_str)
         if preset:
-            return CustomEmailTemplateResponse(
+            return EmailTemplateResponse(
                 id=preset.id,
                 name=preset.name,
                 category=preset.category,
                 subject=preset.subject,
                 preview_text=preset.preview_text,
-                description=preset.preview_text,
                 html_content=preset.html_content,
-                email_content=preset.html_content,
                 cta_text=preset.cta_text,
                 cta_link=preset.cta_link,
-                image_urls=None,
                 is_predesigned=True,
             )
 
-        # Check DB if UUID
+        # Check DB for custom template by UUID
         try:
             uuid_id = UUID(template_id_str)
             repo = EmailTemplateRepository(session)
             c = await repo.get_by_id(uuid_id)
             if c:
-                return CustomEmailTemplateResponse(
+                return EmailTemplateResponse(
                     id=c.id,
                     name=c.name,
                     category=c.category,
                     subject=c.subject,
                     preview_text=c.preview_text,
-                    description=c.preview_text,
                     html_content=c.html_content,
-                    email_content=c.html_content,
                     cta_text=c.cta_text,
                     cta_link=c.cta_link,
                     image_urls=c.image_urls,
@@ -148,11 +135,6 @@ class EmailTemplateService:
             return None
 
         update_data = data.model_dump(exclude_unset=True)
-        if "description" in update_data:
-            del update_data["description"]
-        if "email_content" in update_data:
-            del update_data["email_content"]
-
         for key, value in update_data.items():
             setattr(template, key, value)
         template.updated_at = datetime.now(timezone.utc)
@@ -169,7 +151,7 @@ class EmailTemplateService:
         self,
         session: AsyncSession,
         template_id: Union[str, UUID],
-        sample_name: str = "Valued User",
+        recipient_name: str = "Valued User",
         custom_subject: Optional[str] = None,
         custom_preview_text: Optional[str] = None,
         custom_html_content: Optional[str] = None,
@@ -187,7 +169,7 @@ class EmailTemplateService:
         cta_link = custom_cta_link or (t.cta_link if t else None)
 
         context = {
-            "name": sample_name,
+            "name": recipient_name,
             "html_content": html_content,
             "preview_text": preview_text,
             "sender_name": "Confess Team",

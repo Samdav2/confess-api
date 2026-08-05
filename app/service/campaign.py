@@ -73,10 +73,6 @@ class CampaignService:
             return None
 
         update_data = data.model_dump(exclude_unset=True)
-        if "description" in update_data:
-            del update_data["description"]
-        if "email_content" in update_data:
-            del update_data["email_content"]
 
         if "status" in update_data and update_data["status"] not in [
             s.value for s in CampaignStatus

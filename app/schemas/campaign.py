@@ -1,38 +1,55 @@
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
 
 
-class CampaignCreate(BaseModel):
-    subject: Optional[str] = Field(default=None, max_length=255)
-    preview_text: Optional[str] = Field(default=None, max_length=500)
-    description: Optional[str] = Field(default=None, max_length=500, description="Alias for preview_text")
-    html_content: Optional[str] = Field(default=None, description="HTML body content")
-    email_content: Optional[str] = Field(default=None, description="Alias for html_content")
-    sender_name: Optional[str] = Field(default=None, max_length=255)
-    template_type: Optional[str] = Field(default="promotional", max_length=50)
-    cta_link: Optional[str] = Field(default=None, max_length=500)
-    cta_text: Optional[str] = Field(default=None, max_length=100)
-    scheduled_at: Optional[datetime] = None
+# ---------------------------------------------------------------------------
+# Campaign Management (Admin CRUD)
+# ---------------------------------------------------------------------------
 
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_aliases(cls, values: dict) -> dict:
-        if isinstance(values, dict):
-            if "description" in values and not values.get("preview_text"):
-                values["preview_text"] = values["description"]
-            if "email_content" in values and not values.get("html_content"):
-                values["html_content"] = values["email_content"]
-        return values
+class CampaignCreate(BaseModel):
+    """Create a new email campaign."""
+
+    subject: Optional[str] = Field(
+        default=None, max_length=255,
+        description="Email subject line. Auto-filled from template if omitted.",
+    )
+    preview_text: Optional[str] = Field(
+        default=None, max_length=500,
+        description="Inbox preview / preheader text. Auto-filled from template if omitted.",
+    )
+    html_content: Optional[str] = Field(
+        default=None,
+        description="Email body content. Auto-filled from template if omitted.",
+    )
+    sender_name: Optional[str] = Field(
+        default=None, max_length=255,
+        description="Display name for the sender (e.g. 'Confess Team')",
+    )
+    template_type: Optional[str] = Field(
+        default="promotional", max_length=50,
+        description="Pre-designed template slug or custom template UUID to auto-fill defaults",
+    )
+    cta_link: Optional[str] = Field(
+        default=None, max_length=500,
+        description="Call-to-action button URL. Auto-filled from template if omitted.",
+    )
+    cta_text: Optional[str] = Field(
+        default=None, max_length=100,
+        description="Call-to-action button label. Auto-filled from template if omitted.",
+    )
+    scheduled_at: Optional[datetime] = Field(
+        default=None, description="Schedule campaign for future delivery (UTC)",
+    )
 
 
 class CampaignUpdate(BaseModel):
+    """Partially update an existing campaign."""
+
     subject: Optional[str] = Field(default=None, max_length=255)
     preview_text: Optional[str] = Field(default=None, max_length=500)
-    description: Optional[str] = Field(default=None, max_length=500, description="Alias for preview_text")
-    html_content: Optional[str] = Field(default=None)
-    email_content: Optional[str] = Field(default=None, description="Alias for html_content")
+    html_content: Optional[str] = None
     sender_name: Optional[str] = Field(default=None, max_length=255)
     template_type: Optional[str] = Field(default=None, max_length=50)
     cta_link: Optional[str] = Field(default=None, max_length=500)
@@ -40,16 +57,10 @@ class CampaignUpdate(BaseModel):
     status: Optional[str] = None
     scheduled_at: Optional[datetime] = None
 
-    @model_validator(mode="before")
-    @classmethod
-    def resolve_aliases(cls, values: dict) -> dict:
-        if isinstance(values, dict):
-            if "description" in values and not values.get("preview_text"):
-                values["preview_text"] = values["description"]
-            if "email_content" in values and not values.get("html_content"):
-                values["html_content"] = values["email_content"]
-        return values
 
+# ---------------------------------------------------------------------------
+# Response Models
+# ---------------------------------------------------------------------------
 
 class CampaignResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -81,19 +92,3 @@ class CampaignListResponse(BaseModel):
 
 class CampaignSendRequest(BaseModel):
     confirm: bool = Field(default=False, description="Must be True to confirm sending")
-
-
-class EmailTemplateResponse(BaseModel):
-    id: str
-    name: str
-    category: str
-    subject: str
-    preview_text: str
-    html_content: str
-    cta_text: Optional[str] = None
-    cta_link: Optional[str] = None
-
-
-class EmailTemplateListResponse(BaseModel):
-    total: int
-    templates: List[EmailTemplateResponse]
