@@ -27,14 +27,16 @@ class CampaignService:
     async def create_campaign(
         self, session: AsyncSession, data: CampaignCreate, admin_id: UUID
     ) -> EmailCampaign:
-        template_type = data.template_type or "promotional"
-        preset = get_template_by_id(template_type)
+        from app.service.email_template import email_template_service
 
-        subject = data.subject or (preset.subject if preset else "Notification from Confess")
-        preview_text = data.preview_text or (preset.preview_text if preset else None)
-        html_content = data.html_content or (preset.html_content if preset else "<p>No content provided</p>")
-        cta_link = data.cta_link or (preset.cta_link if preset else None)
-        cta_text = data.cta_text or (preset.cta_text if preset else None)
+        template_type = data.template_type or "promotional"
+        tmpl = await email_template_service.get_template_by_id(session, template_type)
+
+        subject = data.subject or (tmpl.subject if tmpl else "Notification from Confess")
+        preview_text = data.preview_text or (tmpl.preview_text if tmpl else None)
+        html_content = data.html_content or (tmpl.html_content if tmpl else "<p>No content provided</p>")
+        cta_link = data.cta_link or (tmpl.cta_link if tmpl else None)
+        cta_text = data.cta_text or (tmpl.cta_text if tmpl else None)
 
         campaign = EmailCampaign(
             subject=subject,
