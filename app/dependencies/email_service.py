@@ -3,6 +3,7 @@ from mailjet_rest import Client
 from fastapi import BackgroundTasks
 from pydantic import EmailStr
 from typing import Dict, Any
+from uuid import UUID
 import logging
 from pathlib import Path
 import jinja2
@@ -553,5 +554,99 @@ class EmailService:
             },
             template_name="celebration_notification.html"
         )
+
+    @staticmethod
+    def _send_campaign_email(
+        subject: str,
+        email_to: str,
+        name: str,
+        html_content: str,
+        preview_text: str,
+        sender_name: str,
+        campaign_id: UUID,
+    ):
+        template_body = {
+            "name": name,
+            "html_content": html_content,
+            "preview_text": preview_text,
+            "sender_name": sender_name,
+            "project_name": settings.PROJECT_NAME,
+            "subject": subject,
+            "site_url": settings.FRONTEND_URL,
+            "current_year": datetime.now().year,
+        }
+        html_part = EmailService._render_template("promotional_email.html", template_body)
+
+        text_part = f"{subject}\n\n{preview_text}\n\n(Please view in an HTML-compatible client)"
+
+        try:
+            mailjet = Client(auth=(settings.MAILJET_API_KEY, settings.MAILJET_SECRET_KEY), version='v3.1')
+
+            inlined_attachments = []
+            images = [
+                ("logo.png", "logo", "image/png"),
+                ("image1.jpg", "image1", "image/jpeg"),
+                ("image2.png", "image2", "image/png")
+            ]
+
+            for filename, cid, content_type in images:
+                file_path = ASSETS_FOLDER / filename
+                if file_path.exists():
+                    try:
+                        with open(file_path, 'rb') as f:
+                            img_data = f.read()
+                            b64_content = base64.b64encode(img_data).decode('utf-8')
+                            inlined_attachments.append({
+                                "ContentType": content_type,
+                                "Filename": filename,
+                                "ContentID": cid,
+                                "Base64Content": b64_content
+                            })
+                    except Exception as e:
+                        logger.error(f"Failed to process image {filename}: {e}")
+
+            import hashlib
+            import time
+            unique_id = hashlib.md5(f"{email_to}{time.time()}".encode()).hexdigest()[:12]
+            custom_id = f"confess-campaign-{campaign_id}-{unique_id}"
+
+            message_payload = {
+                "From": {
+                    "Email": settings.MAIL_FROM,
+                    "Name": sender_name,
+                },
+                "ReplyTo": {
+                    "Email": settings.MAIL_FROM,
+                    "Name": sender_name,
+                },
+                "To": [
+                    {
+                        "Email": email_to,
+                        "Name": name,
+                    }
+                ],
+                "Subject": subject,
+                "TextPart": text_part,
+                "HTMLPart": html_part,
+                "CustomID": custom_id,
+                "Headers": {
+                    "List-Unsubscribe": f"<mailto:unsubscribe@confess.com.ng?subject=Unsubscribe>, <https://confess.com.ng/unsubscribe>"
+                }
+            }
+
+            if inlined_attachments:
+                message_payload["InlinedAttachments"] = inlined_attachments
+
+            data = {'Messages': [message_payload]}
+            result = mailjet.send.create(data=data)
+
+            if result.status_code == 200:
+                logger.info(f"Campaign email sent to {email_to}")
+            else:
+                logger.error(f"Failed campaign email to {email_to}: {result.status_code} {result.json()}")
+
+        except Exception as e:
+            logger.error(f"Exception sending campaign email to {email_to}: {e}")
+
 
 email_service = EmailService()

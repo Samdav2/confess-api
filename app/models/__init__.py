@@ -8,3 +8,4 @@ from .payment import Payment
 from .admin import Admin
 from .celebration import CelebrationPage
 from .post import Post
+from .campaign import EmailCampaign

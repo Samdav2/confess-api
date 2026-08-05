@@ -1,0 +1,13 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<div style="margin: 20px 0;">
+    {{ html_content | safe }}
+</div>
+
+<p style="margin-top: 24px; font-size: 14px; color: #666666;">
+    You're receiving this because you're a valued member of the Confess community.
+</p>
+{% endblock %}
