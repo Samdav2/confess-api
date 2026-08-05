@@ -11,7 +11,7 @@ class CampaignRepository:
 
     async def create(self, campaign: EmailCampaign) -> EmailCampaign:
         self.session.add(campaign)
-        await self.session.flush()
+        await self.session.commit()
         await self.session.refresh(campaign)
         return campaign
 
@@ -25,7 +25,7 @@ class CampaignRepository:
     ) -> tuple[list[EmailCampaign], int]:
         count_stmt = select(func.count()).select_from(EmailCampaign)
         count_result = await self.session.exec(count_stmt)
-        total = count_result.one()
+        total = count_result.one() or 0
 
         stmt = (
             select(EmailCampaign)
@@ -38,7 +38,7 @@ class CampaignRepository:
 
     async def update(self, campaign: EmailCampaign) -> EmailCampaign:
         self.session.add(campaign)
-        await self.session.flush()
+        await self.session.commit()
         await self.session.refresh(campaign)
         return campaign
 
