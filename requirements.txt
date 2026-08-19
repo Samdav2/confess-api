@@ -21,3 +21,6 @@ google-genai
 groq
 gunicorn
 psycopg2-binary
+cachetools
+google-auth
+
