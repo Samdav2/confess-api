@@ -1,14 +1,20 @@
-from typing import List
-from pydantic_settings import BaseSettings
+import json
 import os
+import logging
+from typing import List, Union
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "CONFESS BACKEND"
     API_V1_STR: str = "/api/v1"
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
-    SECRET_KEY: str = os.getenv("SECRET_KEY")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./confess.db")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "default-confess-secret-key-change-in-production")
     ALGORITHM: str = "RS256"
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://confess.com.ng")
 
@@ -18,10 +24,33 @@ class Settings(BaseSettings):
         "https://confess.com.ng",
         "https://www.confess.com.ng",
         "https://confess-git-development-feranmibas-projects.vercel.app"
-
     ]
 
     ALLOWED_HOSTS: List[str] = ["*"]
+
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, str) and v.startswith("["):
+            try:
+                return json.loads(v)
+            except Exception:
+                pass
+        return v
+
+    @field_validator("ALLOWED_HOSTS", mode="before")
+    @classmethod
+    def assemble_allowed_hosts(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, str) and v.startswith("["):
+            try:
+                return json.loads(v)
+            except Exception:
+                pass
+        return v
 
     @property
     def JWT_PRIVATE_KEY(self) -> str:
@@ -32,6 +61,7 @@ class Settings(BaseSettings):
             with open("certs/private.pem", "r") as f:
                 return f.read()
         except FileNotFoundError:
+            logger.warning("⚠️ JWT_PRIVATE_KEY environment variable not set and certs/private.pem not found.")
             return ""
 
     @property
@@ -43,6 +73,7 @@ class Settings(BaseSettings):
             with open("certs/public.pem", "r") as f:
                 return f.read()
         except FileNotFoundError:
+            logger.warning("⚠️ JWT_PUBLIC_KEY environment variable not set and certs/public.pem not found.")
             return ""
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 2880
@@ -75,8 +106,6 @@ class Settings(BaseSettings):
     PAYSTACK_SECRET_KEY: str = os.getenv("PAYSTACK_SECRET_KEY", "")
     PAYSTACK_PUBLIC_KEY: str = os.getenv("PAYSTACK_PUBLIC_KEY", "")
 
-
-
     class Config:
         case_sensitive = True
         env_file = ".env"
@@ -84,11 +113,12 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Fix DATABASE_URL for Render (postgres:// -> postgresql+asyncpg://)
-# This must be done AFTER loading from env, because BaseSettings overwrites defaults with env vars.
-if settings.DATABASE_URL and settings.DATABASE_URL.startswith("postgres://"):
-    settings.DATABASE_URL = settings.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-elif settings.DATABASE_URL and settings.DATABASE_URL.startswith("postgresql://") and "asyncpg" not in settings.DATABASE_URL:
-    settings.DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+# Fix DATABASE_URL for Railway/Render PostgreSQL (postgres:// or postgresql:// -> postgresql+asyncpg://)
+if settings.DATABASE_URL:
+    if settings.DATABASE_URL.startswith("postgres://"):
+        settings.DATABASE_URL = settings.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif settings.DATABASE_URL.startswith("postgresql://") and "+asyncpg" not in settings.DATABASE_URL:
+        settings.DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 print(f"DEBUG: Final settings.DATABASE_URL: {settings.DATABASE_URL}")
+

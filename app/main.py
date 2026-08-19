@@ -76,13 +76,22 @@ app.include_router(feedback_router, prefix=f"{settings.API_V1_STR}/feedback", ta
 app.include_router(api_router, prefix=settings.API_V1_STR, dependencies=[Depends(get_api_key)])
 
 
+import os
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": settings.PROJECT_NAME}
+
+
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)
+
 
 
 from fastapi.openapi.utils import get_openapi

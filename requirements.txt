@@ -19,3 +19,5 @@ email-validator
 httpx
 google-genai
 groq
+gunicorn
+psycopg2-binary
