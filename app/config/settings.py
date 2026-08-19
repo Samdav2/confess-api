@@ -10,7 +10,39 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+_fallback_private_key = None
+_fallback_public_key = None
+
+def _get_fallback_keys():
+    global _fallback_private_key, _fallback_public_key
+    if not _fallback_private_key or not _fallback_public_key:
+        try:
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric import rsa
+            from cryptography.hazmat.backends import default_backend
+
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048,
+                backend=default_backend()
+            )
+            _fallback_private_key = private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode('utf-8')
+            _fallback_public_key = private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            ).decode('utf-8')
+        except Exception as e:
+            logger.error(f"Error generating fallback RSA key pair: {e}")
+            _fallback_private_key, _fallback_public_key = "", ""
+    return _fallback_private_key, _fallback_public_key
+
+
 class Settings(BaseSettings):
+
     PROJECT_NAME: str = "CONFESS BACKEND"
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./confess.db")
@@ -61,8 +93,9 @@ class Settings(BaseSettings):
             with open("certs/private.pem", "r") as f:
                 return f.read()
         except FileNotFoundError:
-            logger.warning("⚠️ JWT_PRIVATE_KEY environment variable not set and certs/private.pem not found.")
-            return ""
+            logger.warning("⚠️ JWT_PRIVATE_KEY environment variable not set and certs/private.pem not found. Using auto-generated fallback RSA key.")
+            priv, _ = _get_fallback_keys()
+            return priv
 
     @property
     def JWT_PUBLIC_KEY(self) -> str:
@@ -73,8 +106,10 @@ class Settings(BaseSettings):
             with open("certs/public.pem", "r") as f:
                 return f.read()
         except FileNotFoundError:
-            logger.warning("⚠️ JWT_PUBLIC_KEY environment variable not set and certs/public.pem not found.")
-            return ""
+            logger.warning("⚠️ JWT_PUBLIC_KEY environment variable not set and certs/public.pem not found. Using auto-generated fallback RSA key.")
+            _, pub = _get_fallback_keys()
+            return pub
+
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 2880
 
