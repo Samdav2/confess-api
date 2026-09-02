@@ -9,6 +9,7 @@ from app.service.feedback_service import FeedbackService
 feedback_router = APIRouter()
 
 @feedback_router.post("", response_model=FeedbackResponse)
+@feedback_router.post("/", response_model=FeedbackResponse, include_in_schema=False)
 async def create_feedback(
     feedback_in: FeedbackCreate,
     current_user: User = Depends(get_current_user),

@@ -22,7 +22,8 @@ from app.service.post_service import (
 router = APIRouter()
 
 
-@router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED, summary="[Admin] Create a new post")
+@router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED, summary="[Admin] Create a new post")
+@router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED, summary="[Admin] Create a new post", include_in_schema=False)
 async def admin_create_post(
     request: PostCreate,
     current_admin: Admin = Depends(get_current_admin),
@@ -32,7 +33,8 @@ async def admin_create_post(
     return await create_post(db=db, post_in=request, author_id=current_admin.id)
 
 
-@router.get("/", response_model=PaginatedPostsResponse, summary="[Admin] List all posts")
+@router.get("", response_model=PaginatedPostsResponse, summary="[Admin] List all posts")
+@router.get("/", response_model=PaginatedPostsResponse, summary="[Admin] List all posts", include_in_schema=False)
 async def admin_get_posts(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

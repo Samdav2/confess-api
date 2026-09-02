@@ -18,6 +18,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=CampaignResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CampaignResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_campaign(
     request: CampaignCreate,
     current_admin: Admin = Depends(get_current_admin),
@@ -30,6 +31,7 @@ async def create_campaign(
 
 
 @router.get("", response_model=CampaignListResponse)
+@router.get("/", response_model=CampaignListResponse, include_in_schema=False)
 async def list_campaigns(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),

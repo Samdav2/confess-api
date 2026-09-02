@@ -28,7 +28,8 @@ async def check_slug(
     available = await service.check_slug_availability(slug)
     return SlugAvailabilityResponse(available=available)
 
-@router.post("/", response_model=CelebrationPageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CelebrationPageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CelebrationPageResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_celebration(
     data: CelebrationPageCreate,
     background_tasks: BackgroundTasks,
@@ -62,7 +63,8 @@ async def initialize_payment(
         amount=request.amount
     )
 
-@router.get("/", response_model=CelebrationPageListResponse)
+@router.get("", response_model=CelebrationPageListResponse)
+@router.get("/", response_model=CelebrationPageListResponse, include_in_schema=False)
 async def get_user_celebrations(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),

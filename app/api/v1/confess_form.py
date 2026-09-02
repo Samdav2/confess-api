@@ -23,10 +23,17 @@ async def get_confess_service(session: AsyncSession = Depends(get_session)) -> C
 
 
 @router.post(
-    "/",
+    "",
     response_model=ConfessFormResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new confess form"
+)
+@router.post(
+    "/",
+    response_model=ConfessFormResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new confess form",
+    include_in_schema=False
 )
 async def create_confess_form(
         confess_data: ConfessFormCreate,
@@ -134,9 +141,15 @@ async def get_confess_form(
 
 
 @router.get(
-    "/",
+    "",
     response_model=ConfessFormListResponse,
     summary="Get user's confess forms"
+)
+@router.get(
+    "/",
+    response_model=ConfessFormListResponse,
+    summary="Get user's confess forms",
+    include_in_schema=False
 )
 async def get_user_confess_forms(
         page: int = Query(default=1, ge=1, description="Page number"),

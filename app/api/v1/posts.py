@@ -39,7 +39,8 @@ async def get_optional_user(
         return None
 
 
-@router.get("/", response_model=PaginatedPostsResponse, summary="List all published posts")
+@router.get("", response_model=PaginatedPostsResponse, summary="List all published posts")
+@router.get("/", response_model=PaginatedPostsResponse, summary="List all published posts", include_in_schema=False)
 async def list_posts(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=50),

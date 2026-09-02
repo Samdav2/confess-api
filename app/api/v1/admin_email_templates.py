@@ -19,6 +19,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=EmailTemplateListResponse)
+@router.get("/", response_model=EmailTemplateListResponse, include_in_schema=False)
 async def list_email_templates(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -34,6 +35,9 @@ async def list_email_templates(
 
 @router.post(
     "", response_model=EmailTemplateResponse, status_code=status.HTTP_201_CREATED
+)
+@router.post(
+    "/", response_model=EmailTemplateResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False
 )
 async def create_custom_template(
     request: EmailTemplateCreate,
