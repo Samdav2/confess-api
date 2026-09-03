@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Request, Header, HTTPException, status, BackgroundTasks
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.db.sessions import get_session
 from app.api.v1.auth import get_current_user
@@ -31,24 +31,27 @@ async def initialize_payment(
 @router.get("/verify/{reference}", response_model=PaystackVerifyResponse)
 async def verify_payment(
     reference: str,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session)
 ):
-    return await paystack_service.verify_transaction(session, reference)
+    return await paystack_service.verify_transaction(session, reference, background_tasks)
 
 @router.get("/callback", response_model=PaystackVerifyResponse)
 async def paystack_callback(
     reference: str,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session)
 ):
     """
     Handle Paystack redirect callback.
     Paystack appends ?reference=... to the callback URL.
     """
-    return await paystack_service.verify_transaction(session, reference)
+    return await paystack_service.verify_transaction(session, reference, background_tasks)
 
 @router.post("/webhook")
 async def paystack_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_paystack_signature: str = Header(None),
     session: AsyncSession = Depends(get_session)
 ):
@@ -56,7 +59,7 @@ async def paystack_webhook(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing signature")
 
     body = await request.body()
-    return await paystack_service.handle_webhook(session, body, x_paystack_signature)
+    return await paystack_service.handle_webhook(session, body, x_paystack_signature, background_tasks)
 
 @router.get("/transactions", response_model=List[PaymentResponse])
 async def list_transactions(

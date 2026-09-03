@@ -1,14 +1,17 @@
 import hmac
 import hashlib
+import json
 import httpx
-from fastapi import HTTPException, status
+from datetime import datetime, timezone
+from typing import Optional, List
+from fastapi import HTTPException, status, BackgroundTasks
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app.config.settings import settings
 from app.models.payment import Payment
 from app.schemas.paystack import PaystackInitializeResponse, PaystackVerifyResponse
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
-from datetime import datetime, timezone
-import json
+
 
 class PaystackService:
     BASE_URL = "https://api.paystack.co"
@@ -20,11 +23,17 @@ class PaystackService:
         }
 
     async def initialize_transaction(
-        self, session: AsyncSession, user_id: str, email: str, amount: float, callback_url: str = None,
-        confess_form_id: str = None, celebration_id: str = None, additional_metadata: dict = None
+        self,
+        session: AsyncSession,
+        user_id: str,
+        email: str,
+        amount: float,
+        callback_url: str = None,
+        confess_form_id: str = None,
+        celebration_id: str = None,
+        additional_metadata: dict = None
     ) -> PaystackInitializeResponse:
         url = f"{self.BASE_URL}/transaction/initialize"
-        # Paystack amount is in kobo
         amount_kobo = int(amount * 100)
 
         metadata = {"user_id": str(user_id)}
@@ -54,7 +63,6 @@ class PaystackService:
 
         data = response.json()["data"]
 
-        # Create payment record
         payment = Payment(
             user_id=user_id,
             reference=data["reference"],
@@ -67,7 +75,12 @@ class PaystackService:
 
         return PaystackInitializeResponse(**data)
 
-    async def verify_transaction(self, session: AsyncSession, reference: str) -> PaystackVerifyResponse:
+    async def verify_transaction(
+        self,
+        session: AsyncSession,
+        reference: str,
+        background_tasks: Optional[BackgroundTasks] = None
+    ) -> PaystackVerifyResponse:
         url = f"{self.BASE_URL}/transaction/verify/{reference}"
 
         async with httpx.AsyncClient() as client:
@@ -82,15 +95,13 @@ class PaystackService:
         resp_json = response.json()
         data = resp_json["data"]
         paystack_status = data.get("status", "failed")  # success | failed | abandoned
-        amount_naira = data.get("amount", 0) / 100  # convert kobo → Naira
+        amount_naira = data.get("amount", 0) / 100
 
-        # Fetch local payment record
         statement = select(Payment).where(Payment.reference == reference)
         results = await session.exec(statement)
         payment = results.first()
 
         if payment:
-            # Guard against amount tampering
             expected_amount_kobo = int(payment.amount * 100)
             if data.get("amount") != expected_amount_kobo:
                 print(f"Warning: Payment amount mismatch. Expected: {expected_amount_kobo}, Got: {data.get('amount')}")
@@ -115,8 +126,10 @@ class PaystackService:
                 payment.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 session.add(payment)
 
-                # Link to ConfessForm if metadata exists
                 metadata = data.get("metadata")
+                confess_form_to_notify = None
+                celebration_to_notify = None
+
                 if metadata:
                     if isinstance(metadata, str):
                         try:
@@ -129,6 +142,8 @@ class PaystackService:
                         from app.models.confess_form import ConfessForm
                         confess_form = await session.get(ConfessForm, confess_form_id)
                         if confess_form:
+                            if not confess_form.paid:
+                                confess_form_to_notify = confess_form
                             confess_form.paid = True
                             session.add(confess_form)
 
@@ -137,18 +152,26 @@ class PaystackService:
                         from app.models.celebration import CelebrationPage, PaymentStatus
                         celebration = await session.get(CelebrationPage, celebration_id)
                         if celebration:
+                            if celebration.payment_status != PaymentStatus.PAID:
+                                celebration_to_notify = celebration
                             celebration.payment_status = PaymentStatus.PAID
                             session.add(celebration)
 
                 await session.commit()
                 await session.refresh(payment)
 
-        # ── Map Paystack status → HTTP response code ───────────────────────
-        # success                        → 200 OK
-        # pending | ongoing | processing | queued  → 202 Accepted
-        # abandoned | failed | reversed  → 402 Payment Required
+                if background_tasks:
+                    if confess_form_to_notify:
+                        from app.service.confess_form import ConfessFormService
+                        cf_service = ConfessFormService(session)
+                        background_tasks.add_task(cf_service.send_confess_form, confess_form_to_notify.slug, background_tasks)
+
+                    if celebration_to_notify:
+                        from app.service.celebration_service import CelebrationService
+                        cel_service = CelebrationService(session)
+                        background_tasks.add_task(cel_service.send_celebration_notification, celebration_to_notify, background_tasks)
+
         PENDING_STATUSES = {"pending", "ongoing", "processing", "queued"}
-        FAILED_STATUSES  = {"abandoned", "failed", "reversed"}
 
         STATUS_MESSAGES = {
             "success":    "Payment was successful",
@@ -184,7 +207,6 @@ class PaystackService:
                 }
             )
 
-        # abandoned | failed | reversed
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail={
@@ -201,8 +223,13 @@ class PaystackService:
         results = await session.exec(statement)
         return results.all()
 
-    async def handle_webhook(self, session: AsyncSession, request_body: bytes, signature: str):
-        # Verify signature
+    async def handle_webhook(
+        self,
+        session: AsyncSession,
+        request_body: bytes,
+        signature: str,
+        background_tasks: Optional[BackgroundTasks] = None
+    ):
         hash = hmac.new(
             settings.PAYSTACK_SECRET_KEY.encode('utf-8'),
             request_body,
@@ -232,13 +259,15 @@ class PaystackService:
                 payment.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 session.add(payment)
 
-                # Link to ConfessForm if metadata exists
                 metadata = data.get("metadata")
+                confess_form_to_notify = None
+                celebration_to_notify = None
+
                 if metadata:
                     if isinstance(metadata, str):
                         try:
                             metadata = json.loads(metadata)
-                        except:
+                        except Exception:
                             metadata = {}
 
                     confess_form_id = metadata.get("confess_form_id")
@@ -246,6 +275,8 @@ class PaystackService:
                         from app.models.confess_form import ConfessForm
                         confess_form = await session.get(ConfessForm, confess_form_id)
                         if confess_form:
+                            if not confess_form.paid:
+                                confess_form_to_notify = confess_form
                             confess_form.paid = True
                             session.add(confess_form)
 
@@ -254,11 +285,25 @@ class PaystackService:
                         from app.models.celebration import CelebrationPage, PaymentStatus
                         celebration = await session.get(CelebrationPage, celebration_id)
                         if celebration:
+                            if celebration.payment_status != PaymentStatus.PAID:
+                                celebration_to_notify = celebration
                             celebration.payment_status = PaymentStatus.PAID
                             session.add(celebration)
 
                 await session.commit()
 
+                if background_tasks:
+                    if confess_form_to_notify:
+                        from app.service.confess_form import ConfessFormService
+                        cf_service = ConfessFormService(session)
+                        background_tasks.add_task(cf_service.send_confess_form, confess_form_to_notify.slug, background_tasks)
+
+                    if celebration_to_notify:
+                        from app.service.celebration_service import CelebrationService
+                        cel_service = CelebrationService(session)
+                        background_tasks.add_task(cel_service.send_celebration_notification, celebration_to_notify, background_tasks)
+
         return {"status": "success"}
+
 
 paystack_service = PaystackService()

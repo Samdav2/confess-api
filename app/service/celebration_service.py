@@ -106,14 +106,7 @@ class CelebrationService:
 
         created_celebration = await self.repository.create(celebration)
 
-        # Trigger notification
-        try:
-            await self.send_celebration_notification(created_celebration, background_tasks)
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to send initial celebration notification: {e}", exc_info=True)
-
+        # Celebration page created with PENDING status. Payment required before sending notification.
         return created_celebration
 
     async def send_celebration_notification(
@@ -124,6 +117,12 @@ class CelebrationService:
         """
         Send celebration notification via Email or SMS.
         """
+        if celebration.payment_status != PaymentStatus.PAID:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Payment required to send celebration notification"
+            )
+
         sender_name = ""
         if celebration.delivery == DeliveryMethod.PHONE:
             if not celebration.phone:
@@ -170,6 +169,11 @@ class CelebrationService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Celebration page not found."
+            )
+        if celebration.payment_status != PaymentStatus.PAID:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Payment required to view this celebration page."
             )
         return celebration
 

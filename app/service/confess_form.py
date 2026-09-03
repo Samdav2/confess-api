@@ -91,13 +91,7 @@ class ConfessFormService:
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to generate AI message: {e}", exc_info=True)
 
-        # Trigger notification immediately
-        try:
-            await self.send_confess_form(slug, background_tasks)
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to send initial notification: {e}", exc_info=True)
+        # Form is created with paid=False by default. Payment is required to send notifications.
 
         # Try to use the direct generated text first for the response
         final_ai_message = ai_message_text if 'ai_message_text' in locals() else (created_form.ai_message.message if created_form.ai_message else None)
@@ -145,6 +139,12 @@ class ConfessFormService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Confess form not found"
+            )
+
+        if not confess_form.paid:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Payment required to view this confess form"
             )
 
         # Send notification to sender that the form has been viewed
@@ -284,6 +284,12 @@ class ConfessFormService:
                 detail="Confess form not found"
             )
 
+        if not confess_form.paid:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Payment required to respond to this confess form"
+            )
+
         # Update database
         update_data = {"date_answer": answer}
         if date_proposal:
@@ -398,6 +404,12 @@ class ConfessFormService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Confess form not found"
+            )
+
+        if not confess_form.paid:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Payment required to send this confess form"
             )
 
         from app.dependencies.email_service import email_service
